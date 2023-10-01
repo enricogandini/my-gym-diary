@@ -1,0 +1,13 @@
+[project]
+name = "my-gym-diary"
+authors = [
+    {name = "Enrico Gandini", email = "enricogandini93@gmail.com"},
+]
+description = "Web app to track your gym workouts"
+readme = "README.md"
+requires-python = ">=3.11, <4"
+license = {text = "BSD-3-Clause"}
+version = "0.1.0"
+
+[tool.isort]
+profile = "black"
