@@ -14,8 +14,6 @@ services:
       - 5678:5678
   surrealdb:
     image: surrealdb/surrealdb:latest
-    env_file:
-      - .env.debug
     entrypoint: 
       - /surreal 
       - start 
