@@ -12,3 +12,16 @@ services:
     ports:
       - 8000:8000
       - 5678:5678
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    env_file:
+      - .env.debug
+    entrypoint: 
+      - /surreal 
+      - start 
+      - --user
+      - $DB_USER
+      - --pass
+      - $DB_PASSWORD
+    ports:
+      - 9000:8000
