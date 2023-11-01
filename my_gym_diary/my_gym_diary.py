@@ -1,28 +1,66 @@
 """Welcome to Reflex!"""
 
 import reflex as rx
+import asyncio
 
-import models
+from . import models
 
 
-class AddExercise(rx.State):
+class State(rx.State):
     """The app state"""
 
-    name: str
-    key: str
+    available_exercises: list[models.ExerciseType]
 
-    def add_exercise(self, name: str, key: str):
-        self.name = name
-        self.key = key
+    # TODO: create button that adds new exercise
+    new_exercise: models.ExerciseType
+
+    def _get_all_exercises(self):
+        with rx.session() as session:
+            return session.query(models.ExerciseType).all()
+
+    def load_exercises(self):
+        self.available_exercises = self._get_all_exercises()
+        yield State.reload_exercises
+
+    @rx.background
+    async def reload_exercises(self):
+        while True:
+            await asyncio.sleep(1)
+            async with self:
+                self.available_exercises = self._get_all_exercises()
+    
+    @rx.var
+    def n_available_exercises(self) -> int:
+        return len(self.available_exercises)
+
+
+def available_exercises_display():
+    return rx.vstack(
+        rx.heading(State.n_available_exercises, " available exercises"),
+        rx.foreach(State.available_exercises, render_exercise_type),
+        rx.spacer(),
+        width="30vw",
+        height="100%",
+    )
+
+def render_exercise_type(exercise: models.ExerciseType):
+    return rx.hstack(
+        rx.text(f"({exercise.code}) {exercise.name}", width="10vw"),
+        rx.spacer(),
+        border="solid black 1px",
+        spcaing="5",
+        width="100%",
+    )
 
 
 def index() -> rx.Component:
-    return rx.vstack(
-        rx.heading(State.count),
-        rx.button("Increment", on_click=State.increment),
+    return rx.hstack(
+        rx.spacer(),
+        available_exercises_display(),
+        rx.spacer(),
     )
 
 
 app = rx.App(state=State)
-app.add_page(index)
+app.add_page(index, on_load=State.load_exercises)
 app.compile()
