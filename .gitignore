@@ -162,6 +162,7 @@ cython_debug/
 
 # Reflex
 .web/
+reflex.db
 
 # VSCode
 .vscode/

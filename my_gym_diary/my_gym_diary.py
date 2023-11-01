@@ -2,14 +2,18 @@
 
 import reflex as rx
 
+import models
 
-class State(rx.State):
+
+class AddExercise(rx.State):
     """The app state"""
 
-    count = 0
+    name: str
+    key: str
 
-    def increment(self):
-        self.count += 1
+    def add_exercise(self, name: str, key: str):
+        self.name = name
+        self.key = key
 
 
 def index() -> rx.Component:
