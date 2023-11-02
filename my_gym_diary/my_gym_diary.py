@@ -2,6 +2,7 @@
 
 import asyncio
 
+import pydantic
 import reflex as rx
 
 from . import models
@@ -10,11 +11,11 @@ from . import models
 class State(rx.State):
     """The app state"""
 
-    available_exercises: list[models.ExerciseType]
+    available_exercises: list[models.Exercise]
 
     def _get_all_exercises(self):
         with rx.session() as session:
-            return session.query(models.ExerciseType).all()
+            return session.query(models.Exercise).all()
 
     def load_exercises(self):
         self.available_exercises = self._get_all_exercises()
@@ -37,13 +38,18 @@ class NewExerciseFormState(State):
     name: str
 
     def _save_exercise(self):
-        exercise = models.ExerciseType(
-            code=self.code,
-            name=self.name,
-        )
-        with rx.session() as session:
-            session.add(exercise)
-            session.commit()
+        try:
+            exercise = models.ExerciseCreate(
+                code=self.code,
+                name=self.name,
+            )
+        except pydantic.ValidationError as exc:
+            # TODO: handle properly by showing errors in the form
+            print(exc)
+        else:
+            with rx.session() as session:
+                session.add(models.Exercise.validate(exercise))
+                session.commit()
 
     def handle_submit(self, form_data: dict[str, str]):
         self.name: str = form_data["name"]
@@ -76,7 +82,7 @@ def available_exercises_display():
     )
 
 
-def render_exercise_type(exercise: models.ExerciseType):
+def render_exercise_type(exercise: models.Exercise):
     return rx.hstack(
         rx.text(f"({exercise.code}) {exercise.name}", width="10vw"),
         rx.spacer(),
