@@ -33,6 +33,33 @@ class State(rx.State):
         return len(self.available_exercises)
 
 
+def _get_nice_validation_error_message(exc: pydantic.ValidationError) -> str:
+    """Get a nice validation message from a pydantic ValidationError"""
+    first_error = exc.errors()[0]
+    type = first_error["type"]
+    original_message = first_error["msg"]
+    first_attribute_name = first_error["loc"][0]
+    simple_message = f"{first_attribute_name}: {original_message}"
+    try:
+        match type:
+            case "type_error.none.not_allowed" | "value_error.missing":
+                return f"{first_attribute_name} cannot be empty"
+            case "value_error.str.regex":
+                pattern = first_error["ctx"]["pattern"]
+                if pattern.startswith(r"^\S"):
+                    return f"{first_attribute_name} cannot contain spaces"
+                return f"{first_attribute_name} must match pattern {pattern}"
+            case "value_error.any_str.min_length":
+                return f"{first_attribute_name} must be at least {first_error["ctx"]["limit_value"]} characters long"
+            case "value_error.any_str.max_length":
+                return f"{first_attribute_name} must be at most {first_error["ctx"]["limit_value"]} characters long"
+            case _:
+                return simple_message
+    except:
+        # TODO: log error
+        return simple_message
+
+
 class NewExerciseFormState(State):
     code: str
     name: str
@@ -45,7 +72,11 @@ class NewExerciseFormState(State):
             )
         except pydantic.ValidationError as exc:
             # TODO: handle properly by showing errors in the form
+            # Also move this handling outside of the generic save method,
+            # and into the handle_submit method
             print(exc)
+            error_message = _get_nice_validation_error_message(exc)
+            print(error_message)
         else:
             with rx.session() as session:
                 session.add(models.Exercise.validate(exercise))
