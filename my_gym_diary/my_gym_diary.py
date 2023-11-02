@@ -33,8 +33,8 @@ class State(rx.State):
 
 
 class NewExerciseFormState(State):
-    name: str
     code: str
+    name: str
 
     def _save_exercise(self):
         exercise = models.ExerciseType(
@@ -49,8 +49,8 @@ class NewExerciseFormState(State):
         self.name: str = form_data["name"]
         self.code: str = form_data["code"]
         self._save_exercise()
-        yield rx.set_value("name", "")
         yield rx.set_value("code", "")
+        yield rx.set_value("name", "")
 
 
 def new_exercise_form():
