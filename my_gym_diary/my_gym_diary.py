@@ -33,21 +33,24 @@ class State(rx.State):
 
 
 class NewExerciseFormState(State):
-    form_data: dict[str, str]
+    name: str
+    code: str
 
     def _save_exercise(self):
         exercise = models.ExerciseType(
-            code=self.form_data["code"],
-            name=self.form_data["name"],
+            code=self.code,
+            name=self.name,
         )
         with rx.session() as session:
             session.add(exercise)
             session.commit()
 
     def handle_submit(self, form_data: dict[str, str]):
-        self.form_data = form_data
+        self.name: str = form_data["name"]
+        self.code: str = form_data["code"]
         self._save_exercise()
-        self.form_data = {}
+        yield rx.set_value("name", "")
+        yield rx.set_value("code", "")
 
 
 def new_exercise_form():
