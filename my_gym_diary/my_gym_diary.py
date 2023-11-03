@@ -64,7 +64,7 @@ class NewExerciseFormState(State):
     code: str
     name: str
 
-    def _save_exercise(self):
+    def _create_exercise(self):
         try:
             exercise = models.ExerciseCreate(
                 code=self.code,
@@ -85,7 +85,7 @@ class NewExerciseFormState(State):
     def handle_submit(self, form_data: dict[str, str]):
         self.name: str = form_data["name"]
         self.code: str = form_data["code"]
-        self._save_exercise()
+        self._create_exercise()
         yield rx.set_value("code", "")
         yield rx.set_value("name", "")
 
