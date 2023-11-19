@@ -1,9 +1,11 @@
 from django.db import models
 from django.core.validators import RegexValidator
 
-validator_only_letters = RegexValidator(r"^[a-zA-Z]*$", "Only letters are allowed.")
+validator_only_letters = RegexValidator(
+    r"^[a-zA-Z]*$", message="Only letters are allowed."
+)
 validator_only_letters_and_spaces = RegexValidator(
-    r"^[a-zA-Z ]*$", "Only letters and spaces are allowed."
+    r"^[a-zA-Z ]*$", message="Only letters and spaces are allowed."
 )
 
 
