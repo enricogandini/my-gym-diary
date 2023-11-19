@@ -31,8 +31,22 @@ class Exercise(models.Model):
         return f"{self.code}: {self.name}"
 
 
+class Workout(models.Model):
+    date = models.DateField()
+
+    def __str__(self) -> str:
+        return f"{self.date}"
+
+    @property
+    def n_different_exercises(self) -> int:
+        return self.setofexercise_set.values("exercise").distinct().count()
+
+
 class SetOfExercise(models.Model):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    workout = models.ForeignKey(
+        Workout, on_delete=models.CASCADE, help_text="When was this set performed?"
+    )
     n_repetitions = models.PositiveSmallIntegerField(
         verbose_name="Number of repetitions"
     )
