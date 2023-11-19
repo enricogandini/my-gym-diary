@@ -12,3 +12,6 @@ class Exercise(models.Model):
             models.UniqueConstraint(models.functions.Lower("name"), name="unique_name"),
             models.UniqueConstraint(fields=["code", "name"], name="unique_exercise"),
         ]
+
+    def __str__(self) -> str:
+        return f"{self.code}: {self.name}"
