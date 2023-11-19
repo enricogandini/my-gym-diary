@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.core.validators import RegexValidator
 
@@ -27,3 +29,21 @@ class Exercise(models.Model):
 
     def __str__(self) -> str:
         return f"{self.code}: {self.name}"
+
+
+class SetOfExercise(models.Model):
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    n_repetitions = models.PositiveSmallIntegerField(
+        verbose_name="Number of repetitions"
+    )
+    weight = models.DecimalField(
+        max_digits=5, decimal_places=1, help_text="Weight in kilograms"
+    )
+    notes = models.TextField(max_length=1000, null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.exercise.code}: {self.n_repetitions} reps at {self.weight} kg"
+
+    @property
+    def volume(self) -> Decimal:
+        return self.n_repetitions * self.weight
