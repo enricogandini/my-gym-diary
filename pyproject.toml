@@ -33,6 +33,7 @@ exclude = [
     "node_modules",
     "venv",
     "alembic",
+    "migrations",
 ]
 select = ["F", "I"]
 
