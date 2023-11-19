@@ -34,6 +34,9 @@ class Exercise(models.Model):
 class Workout(models.Model):
     date = models.DateField()
 
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["date"], name="unique_date")]
+
     def __str__(self) -> str:
         return f"{self.date}"
 
