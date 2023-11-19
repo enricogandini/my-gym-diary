@@ -44,6 +44,23 @@ class Workout(models.Model):
     def n_different_exercises(self) -> int:
         return self.setofexercise_set.values("exercise").distinct().count()
 
+    def compute_exercise_report(self) -> dict[str, float]:
+        sets_of_exercises = self.setofexercise_set.all()
+        n_sets_of_exercises = sets_of_exercises.count()
+        unique_exercises = sets_of_exercises.values("exercise").distinct()
+        n_unique_exercises = unique_exercises.count()
+        total_volume = sets_of_exercises.aggregate(models.Sum("volume"))["volume__sum"]
+        total_volume_per_exercise = unique_exercises.annotate(
+            volume=models.Sum("volume")
+        )
+        # TODO: check if this works
+        return {
+            "n_sets_of_exercises": n_sets_of_exercises,
+            "n_unique_exercises": n_unique_exercises,
+            "total_volume": total_volume,
+            "total_volume_per_exercise": total_volume_per_exercise,
+        }
+
 
 class SetOfExercise(models.Model):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
