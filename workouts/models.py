@@ -60,6 +60,8 @@ class Workout(models.Model):
     def n_different_exercises(self) -> int:
         return self.setofexercise_set.values("exercise").distinct().count()
 
+    # TODO: move this method to a custom objects Manager.
+    # This should also take a period of time as an argument.
     def compute_exercise_report(self) -> dict[str, float]:
         sets_exercises = self.setofexercise_set.all()
         n_sets_of_exercises = sets_exercises.count()
