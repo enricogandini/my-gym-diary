@@ -45,20 +45,24 @@ class Workout(models.Model):
         return self.setofexercise_set.values("exercise").distinct().count()
 
     def compute_exercise_report(self) -> dict[str, float]:
-        sets_of_exercises = self.setofexercise_set.all()
-        n_sets_of_exercises = sets_of_exercises.count()
-        unique_exercises = sets_of_exercises.values("exercise").distinct()
+        sets_exercises = self.setofexercise_set.all()
+        n_sets_of_exercises = sets_exercises.count()
+        unique_exercises = sets_exercises.values("exercise").distinct()
         n_unique_exercises = unique_exercises.count()
-        total_volume = sets_of_exercises.aggregate(models.Sum("volume"))["volume__sum"]
+        total_volume = sum(set_exercise.volume for set_exercise in sets_exercises)
         total_volume_per_exercise = unique_exercises.annotate(
             volume=models.Sum("volume")
         )
+        total_repetitions = sets_exercises.aggregate(models.Sum("n_repetitions"))[
+            "n_repetitions__sum"
+        ]
         # TODO: check if this works
         return {
             "n_sets_of_exercises": n_sets_of_exercises,
             "n_unique_exercises": n_unique_exercises,
             "total_volume": total_volume,
             "total_volume_per_exercise": total_volume_per_exercise,
+            "total_repetitions": total_repetitions,
         }
 
 

@@ -1,12 +1,10 @@
-from django.http import HttpResponse
+from django.shortcuts import render
 
-from .models import Exercise
+from .models import Workout
 
 
 def index(request):
-    message = "Hello, world. You're at the workouts index."
-    exercises = Exercise.objects.all()
-    message += f"<br>There are {exercises.count()} exercises."
-    for exercise in exercises:
-        message += f"<br>{exercise}"
-    return HttpResponse(message)
+    last_workout = Workout.objects.last()
+    context = last_workout.compute_exercise_report()
+    context["sets_exercises"] = last_workout.setofexercise_set.all()
+    return render(request, "workouts/workouts.html", context)

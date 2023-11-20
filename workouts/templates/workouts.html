@@ -1,0 +1,45 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Workouts</title>
+</head>
+
+<body>
+
+    <h1>Gym Workouts Summary</h1>
+
+    {% if exercises %}
+    <h2>Last Week's Summary</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Exercise</th>
+                <th>Sets</th>
+                <th>Reps</th>
+                <th>Total Volume</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for set_exercise in sets_exercises %}
+            <tr>
+                <td>{{ set_exercise.exercise.name }}</td>
+                <td>{{ set_exercise.n_repetitions }}</td>
+                <td>{{ set_exercise.volume }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>Total Unique Exercises: {{ n_unique_exercises }}</p>
+    <p>Total Sets: {{ n_sets_of_exercises }}</p>
+    <p>Total Reps: {{ total_reps }}</p>
+    <p>Total Volume: {{ total_volume }}</p>
+
+    {% else %}
+    <p>No workouts recorded in the last week.</p>
+    {% endif %}
+
+</body>
+
+</html>
