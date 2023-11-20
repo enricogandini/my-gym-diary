@@ -8,7 +8,7 @@
 
     <h1>Gym Workouts Summary</h1>
 
-    {% if exercises %}
+    {% if n_sets_of_exercises %}
     <h2>Last Week's Summary</h2>
 
     <table>
@@ -32,7 +32,7 @@
 
     <p>Total Unique Exercises: {{ n_unique_exercises }}</p>
     <p>Total Sets: {{ n_sets_of_exercises }}</p>
-    <p>Total Reps: {{ total_reps }}</p>
+    <p>Total Reps: {{ total_repetitions }}</p>
     <p>Total Volume: {{ total_volume }}</p>
 
     {% else %}
