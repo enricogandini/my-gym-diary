@@ -7,4 +7,4 @@ def index(request):
     last_workout = Workout.objects.last()
     context = last_workout.compute_exercise_report()
     context["sets_exercises"] = last_workout.setofexercise_set.all()
-    return render(request, "workouts/workouts.html", context)
+    return render(request, "workouts/index.html", context)
