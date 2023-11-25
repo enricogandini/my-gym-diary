@@ -39,3 +39,6 @@ select = ["F", "I"]
 
 [tool.ruff.isort]
 known-local-folder = ["my_gym_diary"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "my_gym_diary.settings"
