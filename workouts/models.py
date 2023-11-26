@@ -1,4 +1,4 @@
-from decimal import Decimal
+import datetime
 
 from django.core.validators import RegexValidator
 from django.db import models
@@ -80,7 +80,37 @@ class Workout(models.Model):
         }
 
 
+def _get_current_period_id(period: str) -> int:
+    today = datetime.date.today()
+    calendar = today.isocalendar()
+    match period:
+        case "week":
+            return calendar.week
+        case "month":
+            return today.month
+        case "year":
+            return calendar.year
+        case _:
+            raise ValueError("Invalid period")
+
+
+class SetOfExerciseManager(models.Manager):
+    def compute_report(self, period: str) -> models.QuerySet:
+        id_period = _get_current_period_id(period)
+        filter_dict = {
+            f"workout__date__{period}": id_period,
+        }
+        annotate_dict = {
+            "n_workouts": models.Count("workout", distinct=True),
+            "n_unique_exercises": models.Count("exercise", distinct=True),
+            "volume": models.F("n_repetitions") * models.F("weight"),
+        }
+        result = self.filter(**filter_dict).annotate(**annotate_dict)
+        return result
+
+
 class SetOfExercise(models.Model):
+    objects = SetOfExerciseManager()
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     workout = models.ForeignKey(
         Workout, on_delete=models.CASCADE, help_text="When was this set performed?"
@@ -95,7 +125,3 @@ class SetOfExercise(models.Model):
 
     def __str__(self) -> str:
         return f"{self.exercise.code}: {self.n_repetitions} reps at {self.weight} kg"
-
-    @property
-    def volume(self) -> Decimal:
-        return self.n_repetitions * self.weight
