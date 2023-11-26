@@ -40,6 +40,9 @@ invalid_exercise_names = [
     " ",
     " a",
     "a ",
+    "a  a",
+    "a1",
+    "1a",
     "a" * (max_length_name + 1),
 ]
 
@@ -49,3 +52,41 @@ def test_exercise_invalid_name(db, name):
     exercise = Exercise(code="ciao", name=name)
     with pytest.raises(ValidationError):
         exercise.clean_fields()
+
+
+valid_exercise_codes = [
+    "a",
+    "a" * max_length_code,
+    "Z",
+    "Z" * max_length_code,
+    "aZ",
+    "Za",
+]
+@pytest.mark.parametrize("code", valid_exercise_codes)
+def test_exercise_valid_code(db, code):
+    exercise = Exercise(code=code, name="ciao")
+    exercise.full_clean()
+    assert exercise.code == code
+
+valid_exercise_names = [
+    "a",
+    "a" * max_length_name,
+    "Z",
+    "Z" * max_length_name,
+    "aZ",
+    "Za",
+    "a a",
+    "a a a",
+    "a a a",
+    "Z Z",
+    "Z Z Z",
+    "aZ Z",
+    "Za Z",
+    "a Z",
+    "Z a",
+]
+@pytest.mark.parametrize("name", valid_exercise_names)
+def test_exercise_valid_name(db, name):
+    exercise = Exercise(code="ciao", name=name)
+    exercise.full_clean()
+    assert exercise.name == name
