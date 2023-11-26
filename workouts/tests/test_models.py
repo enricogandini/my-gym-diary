@@ -109,7 +109,17 @@ def test_exercise_valid_name(db, name):
 
 
 def test_duplicate_exercise_code_invalid(db, exercise):
-    exercise_duplicate = Exercise(code=exercise.code, name=exercise.name)
+    new_name = exercise.name + " new"
+    exercise_duplicate = Exercise(code=exercise.code, name=new_name)
+    with pytest.raises(ValidationError):
+        exercise_duplicate.full_clean()
+    with pytest.raises(IntegrityError):
+        exercise_duplicate.save()
+
+
+def test_duplicate_exercise_name_invalid(db, exercise):
+    new_code = exercise.code + "new"
+    exercise_duplicate = Exercise(code=new_code, name=exercise.name)
     with pytest.raises(ValidationError):
         exercise_duplicate.full_clean()
     with pytest.raises(IntegrityError):
@@ -124,3 +134,11 @@ def test_ok_exercise_same_code_and_name(db):
     assert exercise.code == name
     assert exercise.name == name
     exercise.delete()
+
+
+def test_duplicate_workout_date_invalid(db, workout_empty):
+    workout_duplicate = Workout(date=workout_empty.date)
+    with pytest.raises(ValidationError):
+        workout_duplicate.full_clean()
+    with pytest.raises(IntegrityError):
+        workout_duplicate.save()
