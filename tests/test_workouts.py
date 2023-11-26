@@ -29,4 +29,4 @@ invalid_exercise_codes = [
 def test_exercise_invalid_code(db, code):
     exercise = Exercise(code=code, name="ciao")
     with pytest.raises(ValidationError):
-        exercise.full_clean()
+        exercise.clean_fields()
