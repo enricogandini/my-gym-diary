@@ -12,7 +12,28 @@ validator_latin_words_single_spaces = RegexValidator(
 )
 
 
+class ExerciseManager(models.Manager):
+    def compute_report(self, period: str) -> models.QuerySet:
+        id_period = _get_current_period_id(period)
+        filter_dict = {
+            f"setofexercise__workout__date__{period}": id_period,
+        }
+        annotate_dict = {
+            "n_workouts": models.Count("setofexercise__workout", distinct=True),
+            "n_sets": models.Count("setofexercise", distinct=True),
+            "n_repetitions": models.Sum("setofexercise__n_repetitions"),
+            "total_weight": models.Sum("setofexercise__weight"),
+            "total_volume": models.Sum(
+                models.F("setofexercise__n_repetitions")
+                * models.F("setofexercise__weight")
+            ),
+        }
+        result = self.filter(**filter_dict).annotate(**annotate_dict)
+        return result
+
+
 class Exercise(models.Model):
+    objects = ExerciseManager()
     code = models.CharField(
         max_length=5, unique=True, validators=[validator_only_latin_letters]
     )
@@ -46,6 +67,17 @@ class Exercise(models.Model):
             "total_volume": total_volume,
             "total_repetitions": total_repetitions,
         }
+
+
+# TODO: remove old compute_exercise_report methods.
+# Add a custom manager to the Workout model, with a compute_report method
+# that computes:
+# - total sets of exercises
+# - total unique exercises
+# - total volume
+# - total repetitions
+# - total weight
+# in a given period of time: week, month, year.
 
 
 class Workout(models.Model):
