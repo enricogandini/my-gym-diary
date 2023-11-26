@@ -1,7 +1,7 @@
 from decimal import Decimal
 
-from django.db import models
 from django.core.validators import RegexValidator
+from django.db import models
 
 validator_only_latin_letters = RegexValidator(
     r"^[a-zA-Z]*$", message="Only latin letters are allowed."

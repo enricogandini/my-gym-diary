@@ -62,11 +62,14 @@ valid_exercise_codes = [
     "aZ",
     "Za",
 ]
+
+
 @pytest.mark.parametrize("code", valid_exercise_codes)
 def test_exercise_valid_code(db, code):
     exercise = Exercise(code=code, name="ciao")
     exercise.full_clean()
     assert exercise.code == code
+
 
 valid_exercise_names = [
     "a",
@@ -85,6 +88,8 @@ valid_exercise_names = [
     "a Z",
     "Z a",
 ]
+
+
 @pytest.mark.parametrize("name", valid_exercise_names)
 def test_exercise_valid_name(db, name):
     exercise = Exercise(code="ciao", name=name)
