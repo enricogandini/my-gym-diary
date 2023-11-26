@@ -112,3 +112,13 @@ def test_duplicate_exercise_code_invalid(db, exercise):
         exercise_duplicate.full_clean()
     with pytest.raises(IntegrityError):
         exercise_duplicate.save()
+
+
+def test_ok_exercise_same_code_and_name(db):
+    name = "hello"
+    exercise = Exercise(code=name, name=name)
+    exercise.full_clean()
+    exercise.save()
+    assert exercise.code == name
+    assert exercise.name == name
+    exercise.delete()
