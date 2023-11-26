@@ -33,6 +33,7 @@ invalid_exercise_codes = [
     "a1",
     "1a",
     "a" * (max_length_code + 1),
+    "a_",
 ]
 
 
@@ -53,6 +54,7 @@ invalid_exercise_names = [
     "a1",
     "1a",
     "a" * (max_length_name + 1),
+    "a_",
 ]
 
 
