@@ -1,3 +1,4 @@
+import calendar
 import datetime
 
 from django.core.validators import RegexValidator
@@ -10,6 +11,26 @@ validator_latin_words_single_spaces = RegexValidator(
     r"^[a-zA-Z]+(?: [a-zA-Z]+)*$",
     message="Only latin letters and single spaces are allowed, no trailing spaces.",
 )
+
+
+def get_start_end_dates_from_period(
+    center: datetime.date, period: str
+) -> tuple[datetime.date, datetime.date]:
+    """Returns start and end dates of a period of time, given a center date."""
+    match period:
+        case "week":
+            start_date = center - datetime.timedelta(days=center.weekday())
+            end_date = start_date + datetime.timedelta(days=6)
+        case "month":
+            start_date = center.replace(day=1)
+            last_month_day = calendar.monthrange(center.year, center.month)[1]
+            end_date = start_date.replace(day=last_month_day)
+        case "year":
+            start_date = center.replace(month=1, day=1)
+            end_date = start_date.replace(month=12, day=31)
+        case _:
+            raise ValueError("Invalid period")
+    return (start_date, end_date)
 
 
 class ExerciseManager(models.Manager):

@@ -8,32 +8,32 @@
 
     <h1>Gym Workouts Summary</h1>
 
-    {% if n_sets_of_exercises %}
+    {% if exercises %}
     <h2>Last Week's Summary</h2>
 
     <table>
         <thead>
             <tr>
                 <th>Exercise</th>
-                <th>Reps</th>
+                <th>Number of Sets</th>
                 <th>Total Volume</th>
             </tr>
         </thead>
         <tbody>
-            {% for set_exercise in sets_exercises %}
+            {% for exercise in exercises %}
             <tr>
-                <td>{{ set_exercise.exercise.name }}</td>
-                <td>{{ set_exercise.n_repetitions }}</td>
-                <td>{{ set_exercise.volume }}</td>
+                <td>{{ exercise.name }}</td>
+                <td>{{ exercise.n_sets}}</td>
+                <td>{{ exercise.total_volume }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <p>Total Unique Exercises: {{ n_unique_exercises }}</p>
-    <p>Total Sets: {{ n_sets_of_exercises }}</p>
-    <p>Total Reps: {{ total_repetitions }}</p>
-    <p>Total Volume: {{ total_volume }}</p>
+    <p>Total Unique Exercises: TODO</p>
+    <p>Total Sets: TODO</p>
+    <p>Total Reps: TODO</p>
+    <p>Total Volume: TODO</p>
 
     {% else %}
     <p>No workouts recorded in the last week.</p>
