@@ -13,10 +13,14 @@ validator_latin_words_single_spaces = RegexValidator(
 
 
 class ExerciseManager(models.Manager):
-    def compute_report(self, period: str) -> models.QuerySet:
-        id_period = _get_current_period_id(period)
+    def compute_report(
+        self, start_date: datetime.date, end_date: datetime.date
+    ) -> models.QuerySet:
+        if start_date > end_date:
+            raise ValueError("Start date must be before end date.")
         filter_dict = {
-            f"setofexercise__workout__date__{period}": id_period,
+            "setofexercise__workout__date__gte": start_date,
+            "setofexercise__workout__date__lte": end_date,
         }
         annotate_dict = {
             "n_workouts": models.Count("setofexercise__workout", distinct=True),
