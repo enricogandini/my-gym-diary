@@ -76,35 +76,41 @@ class Exercise(models.Model):
     def __str__(self) -> str:
         return f"{self.code}: {self.name}"
 
-    # TODO: add custom Manager, with methods to compute:
-    # total volume, total repetitions, total sets in a given period of time: week, month, year.
-    def compute_exercise_report(self, period: str) -> dict[str, float]:
-        # TODO: check if this works, and add this to a custom objects manager
-        sets_exercises = self.setofexercise_set.all()
-        n_sets_of_exercises = sets_exercises.count()
-        total_volume = sum(set_exercise.volume for set_exercise in sets_exercises)
-        total_repetitions = sets_exercises.aggregate(models.Sum("n_repetitions"))[
-            "n_repetitions__sum"
-        ]
-        return {
-            "n_sets_of_exercises": n_sets_of_exercises,
-            "total_volume": total_volume,
-            "total_repetitions": total_repetitions,
+
+class WorkoutManager(models.Manager):
+    def compute_report(
+        self,
+        start_date: datetime.date,
+        end_date: datetime.date,
+        interval_total: bool = False,
+    ) -> models.QuerySet:
+        filter_dict = {
+            "date__range": (start_date, end_date),
         }
-
-
-# TODO: remove old compute_exercise_report methods.
-# Add a custom manager to the Workout model, with a compute_report method
-# that computes:
-# - total sets of exercises
-# - total unique exercises
-# - total volume
-# - total repetitions
-# - total weight
-# in a given period of time: week, month, year.
+        stats_dict = {
+            "n_sets_of_exercises": models.Count("setofexercise", distinct=True),
+            "n_unique_exercises": models.Count(
+                "setofexercise__exercise", distinct=True
+            ),
+            "n_repetitions": models.Sum("setofexercise__n_repetitions"),
+            "total_weight": models.Sum("setofexercise__weight"),
+            "total_volume": models.Sum(
+                models.F("setofexercise__n_repetitions")
+                * models.F("setofexercise__weight")
+            ),
+        }
+        if interval_total:
+            stats_dict["n_workouts"] = models.Count("id", distinct=True)
+            operation = "aggregate"
+        else:
+            operation = "annotate"
+        result = self.filter(**filter_dict)
+        result = getattr(result, operation)(**stats_dict)
+        return result
 
 
 class Workout(models.Model):
+    objects = WorkoutManager()
     date = models.DateField()
 
     class Meta:
@@ -116,24 +122,6 @@ class Workout(models.Model):
     @property
     def n_different_exercises(self) -> int:
         return self.setofexercise_set.values("exercise").distinct().count()
-
-    # TODO: move this method to a custom objects Manager.
-    # This should also take a period of time as an argument.
-    def compute_exercise_report(self) -> dict[str, float]:
-        sets_exercises = self.setofexercise_set.all()
-        n_sets_of_exercises = sets_exercises.count()
-        unique_exercises = sets_exercises.values("exercise").distinct()
-        n_unique_exercises = unique_exercises.count()
-        total_volume = sum(set_exercise.volume for set_exercise in sets_exercises)
-        total_repetitions = sets_exercises.aggregate(models.Sum("n_repetitions"))[
-            "n_repetitions__sum"
-        ]
-        return {
-            "n_sets_of_exercises": n_sets_of_exercises,
-            "n_unique_exercises": n_unique_exercises,
-            "total_volume": total_volume,
-            "total_repetitions": total_repetitions,
-        }
 
 
 def _get_current_period_id(period: str) -> int:

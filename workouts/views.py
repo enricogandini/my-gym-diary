@@ -2,7 +2,7 @@ import datetime
 
 from django.shortcuts import render
 
-from .models import Exercise, get_start_end_dates_from_period
+from .models import Exercise, Workout, get_start_end_dates_from_period
 
 
 def index(request):
@@ -11,5 +11,10 @@ def index(request):
     )
     context = {
         "exercises": Exercise.objects.compute_report(start_date, end_date),
+        "interval_statistics": Workout.objects.compute_report(
+            start_date, end_date, interval_total=True
+        ),
+        "start_date": start_date,
+        "end_date": end_date,
     }
     return render(request, "workouts/index.html", context)
