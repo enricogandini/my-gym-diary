@@ -40,8 +40,7 @@ class ExerciseManager(models.Manager):
         if start_date > end_date:
             raise ValueError("Start date must be before end date.")
         filter_dict = {
-            "setofexercise__workout__date__gte": start_date,
-            "setofexercise__workout__date__lte": end_date,
+            "setofexercise__workout__date__range": (start_date, end_date),
         }
         annotate_dict = {
             "n_workouts": models.Count("setofexercise__workout", distinct=True),
