@@ -1,6 +1,8 @@
 import calendar
 import datetime
+from pathlib import Path
 
+import pandas as pd
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -139,21 +141,27 @@ def _get_current_period_id(period: str) -> int:
 
 
 class SetOfExerciseManager(models.Manager):
-    # TODO: add a constructor method that takes an excel file and creates the objects
-    # It should create the exercises if they don't exist.
-    # It should create the workouts if they don't exist.
-    def compute_report(self, period: str) -> models.QuerySet:
-        id_period = _get_current_period_id(period)
-        filter_dict = {
-            f"workout__date__{period}": id_period,
-        }
-        annotate_dict = {
-            "n_workouts": models.Count("workout", distinct=True),
-            "n_unique_exercises": models.Count("exercise", distinct=True),
-            "volume": models.F("n_repetitions") * models.F("weight"),
-        }
-        result = self.filter(**filter_dict).annotate(**annotate_dict)
-        return result
+    def create_from_excel(self, path: Path) -> None:
+        """Create a set of exercises from an Excel file."""
+        df = pd.read_excel(path)
+        for id_row, row in df.iterrows():
+            try:
+                try:
+                    exercise = Exercise.objects.get(code=row["Exercise"])
+                except Exercise.DoesNotExist:
+                    exercise = Exercise.objects.create(
+                        code=row["Exercise"], name=row["Exercise"]
+                    )
+                workout, _ = Workout.objects.get_or_create(date=row["Date"])
+                self.create(
+                    exercise=exercise,
+                    workout=workout,
+                    n_repetitions=row["Reps"],
+                    weight=row["Weight"],
+                    notes=row["Notes"],
+                )
+            except Exception as exc:
+                print(f"Skipping row {id_row} because of: {exc}")
 
 
 class SetOfExercise(models.Model):
