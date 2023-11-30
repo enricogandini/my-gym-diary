@@ -13,7 +13,7 @@ class ExerciseAdmin(admin.ModelAdmin):
 
 
 class RepetitionsRangesFilter(admin.SimpleListFilter):
-    title = "number of repetitions"
+    title = "repetitions range"
     parameter_name = "n_repetitions"
 
     def lookups(self, request, model_admin):
