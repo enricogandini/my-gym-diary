@@ -13,7 +13,7 @@
     <p>Period: {{ start_date }}-{{ end_date }}</p>
 
     {% if exercises %}
-    <h2>Last Week's Summary</h2>
+    <h2>Period summary</h2>
 
     <table>
         <thead>
@@ -41,7 +41,7 @@
     <p>Total Volume: {{ interval_statistics.n_workouts }} </p>
 
     {% else %}
-    <p>No workouts recorded in the last week.</p>
+    <p>No workouts recorded in the selected period.</p>
     {% endif %}
 
 </body>
