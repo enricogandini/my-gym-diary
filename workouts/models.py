@@ -139,6 +139,9 @@ def _get_current_period_id(period: str) -> int:
 
 
 class SetOfExerciseManager(models.Manager):
+    # TODO: add a constructor method that takes an excel file and creates the objects
+    # It should create the exercises if they don't exist.
+    # It should create the workouts if they don't exist.
     def compute_report(self, period: str) -> models.QuerySet:
         id_period = _get_current_period_id(period)
         filter_dict = {
