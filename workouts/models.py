@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import re
+from enum import StrEnum
 from pathlib import Path
 
 import pandas as pd
@@ -151,9 +152,36 @@ class SetOfExerciseManager(models.Manager):
                 print(f"Skipping row {id_row} because of: {exc}")
 
 
+class RepetitionsRanges(StrEnum):
+    LOW = "1-5"
+    MEDIUM = "6-10"
+    HIGH = "11-15"
+    VERY_HIGH = ">15"
+
+    def display_name(self) -> str:
+        return self.name.replace("_", " ").title()
+
+
 class SetOfExerciseQuerySet(models.QuerySet):
     _pattern_repetitions_range_between = re.compile(r"^(?P<low>\d+)-(?P<high>\d+)$")
     _pattern_repetitions_range_greater = re.compile(r"^>(?P<low>\d+)$")
+
+    def named_repetitions_range(
+        self, range: str | RepetitionsRanges
+    ) -> models.QuerySet:
+        """Filter by named repetitions range."""
+        if isinstance(range, str):
+            try:
+                range = range.replace(" ", "_").upper()
+                range = RepetitionsRanges[range]
+            except KeyError as exc:
+                raise ValueError(
+                    "Invalid repetitions range name. Valid names are: "
+                    f"{", ".join(
+                        [r.display_name() for r in RepetitionsRanges]
+                    )}"
+                ) from exc
+        return self.repetitions_range(range.value)
 
     def repetitions_range(self, range: str) -> models.QuerySet:
         """Filter by repetitions range."""
@@ -161,7 +189,9 @@ class SetOfExerciseQuerySet(models.QuerySet):
             low = int(matched["low"])
             high = int(matched["high"])
             if low > high:
-                raise ValueError("Low repetitions must be lower than high repetitions.")
+                raise ValueError(
+                    "Low repetitions must be lowepyr than high repetitions."
+                )
             return self.filter(n_repetitions__range=(low, high))
         elif matched := self._pattern_repetitions_range_greater.match(range):
             low = int(matched["low"])

@@ -3,7 +3,7 @@ from typing import Any
 from django.contrib import admin
 from django.db.models.query import QuerySet
 
-from .models import Exercise, SetOfExercise, Workout
+from .models import Exercise, RepetitionsRanges, SetOfExercise, Workout
 
 
 @admin.register(Exercise)
@@ -17,12 +17,7 @@ class RepetitionsRangesFilter(admin.SimpleListFilter):
     parameter_name = "n_repetitions"
 
     def lookups(self, request, model_admin):
-        return (
-            ("1-5", "Low"),
-            ("6-10", "Medium"),
-            ("11-15", "High"),
-            (">15", "Very high"),
-        )
+        return [(range.value, range.display_name()) for range in RepetitionsRanges]
 
     def queryset(self, request: Any, queryset: QuerySet) -> QuerySet | None:
         range = self.value()
