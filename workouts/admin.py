@@ -25,7 +25,10 @@ class RepetitionsRangesFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request: Any, queryset: QuerySet) -> QuerySet | None:
-        return queryset.repetitions_range(self.value())
+        range = self.value()
+        if range is None:
+            return queryset
+        return queryset.repetitions_range(range)
 
 
 @admin.register(SetOfExercise)

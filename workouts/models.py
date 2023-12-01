@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -151,19 +152,23 @@ class SetOfExerciseManager(models.Manager):
 
 
 class SetOfExerciseQuerySet(models.QuerySet):
+    _pattern_repetitions_range_between = re.compile(r"^(?P<low>\d+)-(?P<high>\d+)$")
+    _pattern_repetitions_range_greater = re.compile(r"^>(?P<low>\d+)$")
+
     def repetitions_range(self, range: str) -> models.QuerySet:
-        match range:
-            case "1-5":
-                return self.filter(n_repetitions__range=(1, 5))
-            case "6-10":
-                return self.filter(n_repetitions__range=(6, 10))
-            case "11-15":
-                return self.filter(n_repetitions__range=(11, 15))
-            case ">15":
-                return self.filter(n_repetitions__gt=15)
-            case _:
-                print("No filter applied")
-                return self
+        """Filter by repetitions range."""
+        if matched := self._pattern_repetitions_range_between.match(range):
+            low = int(matched["low"])
+            high = int(matched["high"])
+            if low > high:
+                raise ValueError("Low repetitions must be lower than high repetitions.")
+            return self.filter(n_repetitions__range=(low, high))
+        elif matched := self._pattern_repetitions_range_greater.match(range):
+            low = int(matched["low"])
+            return self.filter(n_repetitions__gt=low)
+        else:
+            print("No filter applied")
+            return self
 
 
 class SetOfExercise(models.Model):
