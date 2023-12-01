@@ -25,18 +25,7 @@ class RepetitionsRangesFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request: Any, queryset: QuerySet) -> QuerySet | None:
-        match self.value():
-            case "1-5":
-                return queryset.filter(n_repetitions__range=(1, 5))
-            case "6-10":
-                return queryset.filter(n_repetitions__range=(6, 10))
-            case "11-15":
-                return queryset.filter(n_repetitions__range=(11, 15))
-            case ">15":
-                return queryset.filter(n_repetitions__gt=15)
-            case _:
-                print("No filter applied")
-                return queryset
+        return queryset.repetitions_range(self.value())
 
 
 @admin.register(SetOfExercise)

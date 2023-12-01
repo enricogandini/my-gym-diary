@@ -164,8 +164,24 @@ class SetOfExerciseManager(models.Manager):
                 print(f"Skipping row {id_row} because of: {exc}")
 
 
+class SetOfExerciseQuerySet(models.QuerySet):
+    def repetitions_range(self, range: str) -> models.QuerySet:
+        match range:
+            case "1-5":
+                return self.filter(n_repetitions__range=(1, 5))
+            case "6-10":
+                return self.filter(n_repetitions__range=(6, 10))
+            case "11-15":
+                return self.filter(n_repetitions__range=(11, 15))
+            case ">15":
+                return self.filter(n_repetitions__gt=15)
+            case _:
+                print("No filter applied")
+                return self
+
+
 class SetOfExercise(models.Model):
-    objects = SetOfExerciseManager()
+    objects = SetOfExerciseManager.from_queryset(SetOfExerciseQuerySet)()
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     workout = models.ForeignKey(
         Workout, on_delete=models.CASCADE, help_text="When was this set performed?"
