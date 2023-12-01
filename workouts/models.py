@@ -126,20 +126,6 @@ class Workout(models.Model):
         return self.setofexercise_set.values("exercise").distinct().count()
 
 
-def _get_current_period_id(period: str) -> int:
-    today = datetime.date.today()
-    calendar = today.isocalendar()
-    match period:
-        case "week":
-            return calendar.week
-        case "month":
-            return today.month
-        case "year":
-            return calendar.year
-        case _:
-            raise ValueError("Invalid period")
-
-
 class SetOfExerciseManager(models.Manager):
     def create_from_excel(self, path: Path) -> None:
         """Create a set of exercises from an Excel file."""
