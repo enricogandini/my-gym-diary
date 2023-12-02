@@ -10,6 +10,7 @@ from .models import Exercise, RepetitionsRanges, SetOfExercise, Workout
 class ExerciseAdmin(admin.ModelAdmin):
     list_display = ("code", "name", "description")
     search_fields = ("code", "name", "description")
+    ordering = ("code",)
 
 
 class RepetitionsRangesFilter(admin.SimpleListFilter):
@@ -31,7 +32,9 @@ class SetOfExerciseAdmin(admin.ModelAdmin):
     list_display = ("workout", "exercise", "n_repetitions", "weight", "notes")
     search_fields = ("notes", "exercise__code", "exercise__name", "workout__date")
     list_filter = ("exercise", "workout__date", RepetitionsRangesFilter)
-    ordering = ("-workout__date", "exercise__code")
+    ordering = ("-workout__date", "exercise__code", "-weight")
 
 
-admin.site.register(Workout)
+@admin.register(Workout)
+class WorkoutAdmin(admin.ModelAdmin):
+    ordering = ("-date",)
