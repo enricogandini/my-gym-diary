@@ -31,6 +31,7 @@ class SetOfExerciseAdmin(admin.ModelAdmin):
     list_display = ("workout", "exercise", "n_repetitions", "weight", "notes")
     search_fields = ("notes", "exercise__code", "exercise__name", "workout__date")
     list_filter = ("exercise", "workout__date", RepetitionsRangesFilter)
+    ordering = ("-workout__date", "exercise__code")
 
 
 admin.site.register(Workout)
