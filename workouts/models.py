@@ -135,7 +135,7 @@ class SetOfExerciseManager(models.Manager):
         for id_row, row in df.iterrows():
             try:
                 try:
-                    exercise = Exercise.objects.get(code=row["Exercise"])
+                    exercise = Exercise.objects.get(code__iexact=row["Exercise"])
                 except Exercise.DoesNotExist:
                     exercise = Exercise.objects.create(
                         code=row["Exercise"], name=row["Exercise"]
