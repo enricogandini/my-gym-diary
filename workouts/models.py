@@ -146,7 +146,7 @@ class SetOfExerciseManager(models.Manager):
                     workout=workout,
                     n_repetitions=row["Reps"],
                     weight=row["Weight"],
-                    notes=row["Notes"],
+                    notes=row.get("Notes", None),
                 )
             except Exception as exc:
                 print(f"Skipping row {id_row} because of: {exc}")
