@@ -51,10 +51,7 @@ class ExerciseManager(models.Manager):
             "n_sets": models.Count("setofexercise", distinct=True),
             "n_repetitions": models.Sum("setofexercise__n_repetitions"),
             "total_weight": models.Sum("setofexercise__weight"),
-            "total_volume": models.Sum(
-                models.F("setofexercise__n_repetitions")
-                * models.F("setofexercise__weight")
-            ),
+            "total_volume": models.Sum("setofexercise__volume"),
         }
         result = self.filter(**filter_dict).annotate(**annotate_dict)
         return result
@@ -98,10 +95,7 @@ class WorkoutManager(models.Manager):
             ),
             "n_repetitions": models.Sum("setofexercise__n_repetitions"),
             "total_weight": models.Sum("setofexercise__weight"),
-            "total_volume": models.Sum(
-                models.F("setofexercise__n_repetitions")
-                * models.F("setofexercise__weight")
-            ),
+            "total_volume": models.Sum("setofexercise__volume"),
         }
         if interval_total:
             stats_dict["n_workouts"] = models.Count("id", distinct=True)
@@ -211,7 +205,12 @@ class SetOfExercise(models.Model):
         verbose_name="Number of repetitions"
     )
     weight = models.DecimalField(
-        max_digits=5, decimal_places=1, help_text="Weight in kilograms"
+        max_digits=6, decimal_places=1, help_text="Weight in kilograms"
+    )
+    volume = models.GeneratedField(
+        expression=models.F("n_repetitions") * models.F("weight"),
+        output_field=models.DecimalField(max_digits=10, decimal_places=1),
+        db_persist=True,
     )
     notes = models.TextField(max_length=1000, null=True, blank=True)
 
