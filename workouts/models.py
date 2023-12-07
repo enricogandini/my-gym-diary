@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import re
+from collections import defaultdict
 from enum import StrEnum
 from pathlib import Path
 
@@ -123,9 +124,10 @@ class Workout(models.Model):
 
 
 class SetOfExerciseManager(models.Manager):
-    def create_from_excel(self, path: Path) -> None:
+    def create_from_excel(self, path: Path) -> dict[str, list[int]]:
         """Create a set of exercises from an Excel file."""
         df = pd.read_excel(path)
+        created_objects = defaultdict(list)
         for id_row, row in df.iterrows():
             try:
                 try:
@@ -134,16 +136,23 @@ class SetOfExerciseManager(models.Manager):
                     exercise = Exercise.objects.create(
                         code=row["Exercise"], name=row["Exercise"]
                     )
-                workout, _ = Workout.objects.get_or_create(date=row["Date"])
-                self.create(
+                    created_objects["exercise"].append(exercise.pk)
+                workout, workout_created = Workout.objects.get_or_create(
+                    date=row["Date"]
+                )
+                if workout_created:
+                    created_objects["workout"].append(workout.pk)
+                set_exercise = self.create(
                     exercise=exercise,
                     workout=workout,
                     n_repetitions=row["Reps"],
                     weight=row["Weight"],
                     notes=row.get("Notes", None),
                 )
+                created_objects["set_of_exercise"].append(set_exercise.pk)
             except Exception as exc:
                 print(f"Skipping row {id_row} because of: {exc}")
+        return created_objects
 
 
 class SetOfExerciseQuerySet(models.QuerySet):
