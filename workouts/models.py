@@ -146,36 +146,24 @@ class SetOfExerciseManager(models.Manager):
                 print(f"Skipping row {id_row} because of: {exc}")
 
 
-class RepetitionsRanges(StrEnum):
-    LOW = "1-5"
-    MEDIUM = "6-10"
-    HIGH = "11-15"
-    VERY_HIGH = ">15"
-
-    def display_name(self) -> str:
-        return self.name.replace("_", " ").title()
-
-
 class SetOfExerciseQuerySet(models.QuerySet):
     _pattern_repetitions_range_between = re.compile(r"^(?P<low>\d+)-(?P<high>\d+)$")
     _pattern_repetitions_range_greater = re.compile(r"^>(?P<low>\d+)$")
 
-    def named_repetitions_range(
-        self, range: str | RepetitionsRanges
-    ) -> models.QuerySet:
+    def named_repetitions_range(self, range: str) -> models.QuerySet:
         """Filter by named repetitions range."""
-        if isinstance(range, str):
-            try:
-                range = range.replace(" ", "_").upper()
-                range = RepetitionsRanges[range]
-            except KeyError as exc:
-                raise ValueError(
-                    "Invalid repetitions range name. Valid names are: "
-                    f"{", ".join(
-                        [r.display_name() for r in RepetitionsRanges]
-                    )}"
-                ) from exc
-        return self.repetitions_range(range.value)
+        try:
+            range = range.replace(" ", "_").upper()
+            range = SetOfExercise.REPETITIONS_RANGES[range]
+        except KeyError as exc:
+            raise ValueError(
+                "Invalid repetitions range name. Valid names are: "
+                f"{", ".join(
+                    [r.display_name() for r in SetOfExercise.REPETITIONS_RANGES]
+                )}"
+            ) from exc
+        else:
+            return self.repetitions_range(range.value)
 
     def repetitions_range(self, range: str) -> models.QuerySet:
         """Filter by repetitions range."""
@@ -213,6 +201,15 @@ class SetOfExercise(models.Model):
         db_persist=True,
     )
     notes = models.TextField(max_length=1000, null=True, blank=True)
+
+    class REPETITIONS_RANGES(StrEnum):
+        LOW = "1-5"
+        MEDIUM = "6-10"
+        HIGH = "11-15"
+        VERY_HIGH = ">15"
+
+        def display_name(self) -> str:
+            return self.name.replace("_", " ").title()
 
     def __str__(self) -> str:
         return f"{self.exercise.code}: {self.n_repetitions} reps at {self.weight} kg"
