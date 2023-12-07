@@ -33,6 +33,7 @@ class SetOfExerciseAdmin(admin.ModelAdmin):
     search_fields = ("notes", "exercise__code", "exercise__name", "workout__date")
     list_filter = ("exercise", "workout__date", RepetitionsRangesFilter)
     ordering = ("-workout__date", "exercise__code", "-weight")
+    show_facets = admin.ShowFacets.ALWAYS
 
 
 @admin.register(Workout)
