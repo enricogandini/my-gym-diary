@@ -163,5 +163,8 @@ cython_debug/
 # VSCode
 .vscode/
 
+# Ruff
+.ruff_cache/
+
 # My Stuff
 .local_tests/
