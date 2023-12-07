@@ -1,10 +1,15 @@
 import datetime
+from pathlib import Path
 
+import pandas as pd
 import pytest
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 
-from workouts.models import Exercise, Workout
+from workouts.models import Exercise, SetOfExercise, Workout
+
+DIR_TEST_DATA = Path(__file__).parent.resolve() / "data"
+DIR_EXCEL = DIR_TEST_DATA / "set_of_exercise"
 
 
 @pytest.fixture
@@ -142,3 +147,19 @@ def test_duplicate_workout_date_invalid(db, workout_empty):
         workout_duplicate.full_clean()
     with pytest.raises(IntegrityError):
         workout_duplicate.save()
+
+
+def test_load_excel_no_notes(db):
+    file = DIR_EXCEL / "correct_no_notes.xlsx"
+    df = pd.read_excel(file)
+    SetOfExercise.objects.create_from_excel(file)
+    for row in df.itertuples():
+        workout = Workout.objects.get(date=row.Date)
+        exercise = Exercise.objects.get(code=row.Exercise)
+        sets = SetOfExercise.objects.filter(
+            workout=workout,
+            exercise=exercise,
+            n_repetitions=row.Reps,
+            weight=row.Weight,
+        )
+        assert len(sets) >= 1
