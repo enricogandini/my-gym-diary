@@ -24,7 +24,7 @@ def index(request):
     return render(request, "workouts/index.html", context)
 
 
-def dashboard_view(request):
+def dashboard(request):
     total_page_views = {
         "x": ["mon", "tue", "wed", "thur", "fri", "sat", "sun"],
         "y": [8, 20, 15, 20, 50, 30, 35],
