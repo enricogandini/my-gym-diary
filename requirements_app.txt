@@ -1,4 +1,3 @@
 django
 pandas
 openpyxl
-pyecharts

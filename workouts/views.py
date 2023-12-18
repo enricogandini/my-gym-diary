@@ -1,9 +1,9 @@
 import datetime
+from collections import Counter
 
 from django.shortcuts import render
 
-from .charts import Colors, line_chart
-from .models import Exercise, Workout, get_start_end_dates_from_period
+from .models import Exercise, SetOfExercise, Workout, get_start_end_dates_from_period
 
 
 def index(request):
@@ -25,28 +25,18 @@ def index(request):
 
 
 def dashboard(request):
-    total_page_views = {
-        "x": ["mon", "tue", "wed", "thur", "fri", "sat", "sun"],
-        "y": [8, 20, 15, 20, 50, 30, 35],
-        "chart_title": "Total Page Views",
-    }
+    stats = SetOfExercise.objects.order_by("workout__date")
 
-    unique_visitors = {
-        "x": ["mon", "tue", "wed", "thur", "fri", "sat", "sun"],
-        "y": [3, 4, 10, 12, 30, 20, 33],
-        "chart_title": "Unique Visitors",
-    }
-    signups = {
-        "x": ["mon", "tue", "wed", "thur", "fri", "sat", "sun"],
-        "y": [3, 4, 10, 12, 30, 20, 33],
-        "chart_title": "Signups",
-    }
-    charts = [
-        line_chart(total_page_views),
-        line_chart(unique_visitors, Colors.yellow),
-        line_chart(signups, Colors.green),
-    ]
+    data = Counter()
+    for row in stats:
+        yymm = row.workout.date.strftime("%Y-%m")
+        data[yymm] += 1
 
-    context = {"charts": charts}
+    # unpack dict keys / values into two lists
+    labels, values = zip(*data.items())
 
+    context = {
+        "labels": labels,
+        "values": values,
+    }
     return render(request, "workouts/dashboard.html", context)
