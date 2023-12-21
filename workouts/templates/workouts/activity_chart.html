@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+
+<h1>Activity Chart</h1>
+
+<form id="dateForm">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="button" onclick="updateChart()">Update Chart</button>
+</form>
+
+<canvas id="activityChart" width="800" height="400"></canvas>
+
+<script>
+    function updateChart() {
+        var startDate = document.getElementById("id_start_date").value;
+        var endDate = document.getElementById("id_end_date").value;
+
+        fetch("{% url 'activity_chart' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: "start_date=" + encodeURIComponent(startDate) + "&end_date=" + encodeURIComponent(endDate)
+        })
+        .then(response => response.json())
+        .then(data => updateChartData(data));
+    }
+
+    function updateChartData(data) {
+        var ctx = document.getElementById("activityChart").getContext("2d");
+
+        // Clear previous chart if it exists
+        if (window.myLineChart) {
+            window.myLineChart.destroy();
+        }
+
+        window.myLineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Activity Amount',
+                    data: data.values,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                day: 'MMM dd'
+                            }
+                        },
+                        adapters: {
+                            date: window.dateFns
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Initial chart rendering with placeholder data
+    updateChart();
+</script>
+
+</body>
+</html>
