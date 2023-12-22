@@ -10,5 +10,7 @@ class DateRangeForm(forms.Form):
     )
     end_date = forms.DateField(
         label="End Date",
-        widget=DatePickerInput(options=FlatpickrOptions(altFormat="Y-m-d")),
+        widget=DatePickerInput(
+            range_from="start_date", options=FlatpickrOptions(altFormat="Y-m-d")
+        ),
     )
