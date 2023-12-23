@@ -191,6 +191,36 @@ class SetOfExerciseQuerySet(models.QuerySet):
             print("No filter applied")
             return self
 
+    def compute_report(
+        self,
+        start_date: datetime.date,
+        end_date: datetime.date,
+        periodicity: str,
+    ) -> models.QuerySet:
+        grouping = ["workout__date__year"]
+        acceptable_period_groupings = ["monthly", "weekly"]
+        if periodicity not in acceptable_period_groupings:
+            raise ValueError(
+                f"Invalid periodicity {periodicity}. "
+                f"Acceptable values are: {acceptable_period_groupings}"
+            )
+        periodicity = periodicity.removesuffix("ly")
+        grouping.extend(
+            [f"workout__date__{periodicity}", "exercise__code", "exercise__name"]
+        )
+        filter_dict = {
+            "workout__date__range": (start_date, end_date),
+        }
+        stats_dict = {
+            "n_workouts": models.Count("workout", distinct=True),
+            "n_sets": models.Count("id"),
+            "total_repetitions": models.Sum("n_repetitions"),
+            "total_weight": models.Sum("weight"),
+            "total_volume": models.Sum("volume"),
+        }
+        result = self.values(*grouping).filter(**filter_dict).annotate(**stats_dict)
+        return result
+
 
 class SetOfExercise(models.Model):
     objects = SetOfExerciseManager.from_queryset(SetOfExerciseQuerySet)()
