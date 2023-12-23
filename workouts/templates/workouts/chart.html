@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<h1>Activity Chart</h1>
+<h1>Workouts Chart</h1>
 
 <form id="dateForm">
     {% csrf_token %}
@@ -25,7 +25,7 @@
         var startDate = document.getElementById("id_start_date").value;
         var endDate = document.getElementById("id_end_date").value;
 
-        fetch("{% url 'activity_chart' %}", {
+        fetch("{% url 'chart' %}", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",

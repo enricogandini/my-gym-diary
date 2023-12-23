@@ -1,11 +1,10 @@
 import datetime
-from collections import Counter
 
 from django.http import JsonResponse
 from django.shortcuts import render
 
 from .forms import DateRangeForm
-from .models import Exercise, SetOfExercise, Workout, get_start_end_dates_from_period
+from .models import Exercise, Workout, get_start_end_dates_from_period
 
 
 def index(request):
@@ -26,25 +25,7 @@ def index(request):
     return render(request, "workouts/index.html", context)
 
 
-def dashboard(request):
-    stats = SetOfExercise.objects.order_by("workout__date")
-
-    data = Counter()
-    for row in stats:
-        yymm = row.workout.date.strftime("%Y-%m")
-        data[yymm] += 1
-
-    # unpack dict keys / values into two lists
-    labels, values = zip(*data.items())
-
-    context = {
-        "labels": labels,
-        "values": values,
-    }
-    return render(request, "workouts/dashboard.html", context)
-
-
-def activity_chart(request):
+def chart(request):
     if request.method == "POST":
         form = DateRangeForm(request.POST)
         if form.is_valid():
@@ -64,4 +45,4 @@ def activity_chart(request):
     else:
         form = DateRangeForm()
 
-    return render(request, "workouts/activity_chart.html", {"form": form})
+    return render(request, "workouts/chart.html", {"form": form})
