@@ -38,7 +38,7 @@ def get_start_end_dates_from_period(
     return (start_date, end_date)
 
 
-class ExerciseManager(models.Manager):
+class ExerciseQuerySet(models.QuerySet):
     def compute_report(
         self, start_date: datetime.date, end_date: datetime.date
     ) -> models.QuerySet:
@@ -59,7 +59,7 @@ class ExerciseManager(models.Manager):
 
 
 class Exercise(models.Model):
-    objects = ExerciseManager()
+    objects = ExerciseQuerySet.as_manager()
     code = models.CharField(
         max_length=5, unique=True, validators=[validator_only_latin_letters]
     )
@@ -79,7 +79,7 @@ class Exercise(models.Model):
         return f"{self.code}: {self.name}"
 
 
-class WorkoutManager(models.Manager):
+class WorkoutQuerySet(models.QuerySet):
     def compute_report(
         self,
         start_date: datetime.date,
@@ -109,7 +109,7 @@ class WorkoutManager(models.Manager):
 
 
 class Workout(models.Model):
-    objects = WorkoutManager()
+    objects = WorkoutQuerySet.as_manager()
     date = models.DateField()
 
     class Meta:
