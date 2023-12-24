@@ -200,7 +200,8 @@ class SetOfExerciseQuerySet(models.QuerySet):
     ) -> models.QuerySet:
         timerange_periods = ["yearly", "monthly", "weekly"]
         total_period = "total"
-        acceptable_period_groupings = timerange_periods + [total_period]
+        daily_period = "daily"
+        acceptable_period_groupings = timerange_periods + [total_period, daily_period]
         grouping = []
         sorting = []
         if periodicity not in acceptable_period_groupings:
@@ -216,6 +217,9 @@ class SetOfExerciseQuerySet(models.QuerySet):
             }
             grouping.extend(periodicity_groupings)
             sorting.extend([f"-{g}" for g in periodicity_groupings])
+        elif periodicity == daily_period:
+            grouping.append("workout__date")
+            sorting.append("-workout__date")
         if per_exercise:
             grouping.extend(["exercise__code", "exercise__name"])
         filter_dict = {
