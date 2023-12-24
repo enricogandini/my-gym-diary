@@ -38,28 +38,7 @@ def get_start_end_dates_from_period(
     return (start_date, end_date)
 
 
-class ExerciseQuerySet(models.QuerySet):
-    def compute_report(
-        self, start_date: datetime.date, end_date: datetime.date
-    ) -> models.QuerySet:
-        if start_date > end_date:
-            raise ValueError("Start date must be before end date.")
-        filter_dict = {
-            "setofexercise__workout__date__range": (start_date, end_date),
-        }
-        annotate_dict = {
-            "n_workouts": models.Count("setofexercise__workout", distinct=True),
-            "n_sets": models.Count("setofexercise", distinct=True),
-            "n_repetitions": models.Sum("setofexercise__n_repetitions"),
-            "total_weight": models.Sum("setofexercise__weight"),
-            "total_volume": models.Sum("setofexercise__volume"),
-        }
-        result = self.filter(**filter_dict).annotate(**annotate_dict)
-        return result
-
-
 class Exercise(models.Model):
-    objects = ExerciseQuerySet.as_manager()
     code = models.CharField(
         max_length=5, unique=True, validators=[validator_only_latin_letters]
     )
@@ -79,37 +58,7 @@ class Exercise(models.Model):
         return f"{self.code}: {self.name}"
 
 
-class WorkoutQuerySet(models.QuerySet):
-    def compute_report(
-        self,
-        start_date: datetime.date,
-        end_date: datetime.date,
-        interval_total: bool = False,
-    ) -> models.QuerySet:
-        filter_dict = {
-            "date__range": (start_date, end_date),
-        }
-        stats_dict = {
-            "n_sets_of_exercises": models.Count("setofexercise", distinct=True),
-            "n_unique_exercises": models.Count(
-                "setofexercise__exercise", distinct=True
-            ),
-            "n_repetitions": models.Sum("setofexercise__n_repetitions"),
-            "total_weight": models.Sum("setofexercise__weight"),
-            "total_volume": models.Sum("setofexercise__volume"),
-        }
-        if interval_total:
-            stats_dict["n_workouts"] = models.Count("id", distinct=True)
-            operation = "aggregate"
-        else:
-            operation = "annotate"
-        result = self.filter(**filter_dict)
-        result = getattr(result, operation)(**stats_dict)
-        return result
-
-
 class Workout(models.Model):
-    objects = WorkoutQuerySet.as_manager()
     date = models.DateField()
 
     class Meta:
