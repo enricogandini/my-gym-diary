@@ -218,7 +218,7 @@ class SetOfExerciseQuerySet(models.QuerySet):
             "total_weight": models.Sum("weight"),
             "total_volume": models.Sum("volume"),
         }
-        result = self.values(*grouping).filter(**filter_dict).annotate(**stats_dict)
+        result = self.filter(**filter_dict).values(*grouping).annotate(**stats_dict)
         return result
 
 
