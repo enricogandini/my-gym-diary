@@ -196,18 +196,28 @@ class SetOfExerciseQuerySet(models.QuerySet):
         start_date: datetime.date,
         end_date: datetime.date,
         periodicity: str,
+        per_exercise: bool = True,
     ) -> models.QuerySet:
-        grouping = ["workout__date__year"]
-        acceptable_period_groupings = ["monthly", "weekly"]
+        timerange_periods = ["yearly", "monthly", "weekly"]
+        total_period = "total"
+        acceptable_period_groupings = timerange_periods + [total_period]
+        grouping = []
+        sorting = []
         if periodicity not in acceptable_period_groupings:
             raise ValueError(
                 f"Invalid periodicity {periodicity}. "
                 f"Acceptable values are: {acceptable_period_groupings}"
             )
-        periodicity = periodicity.removesuffix("ly")
-        grouping.extend(
-            [f"workout__date__{periodicity}", "exercise__code", "exercise__name"]
-        )
+        if periodicity in timerange_periods:
+            periodicity = periodicity.removesuffix("ly")
+            periodicity_groupings = {
+                "workout__date__year",
+                f"workout__date__{periodicity}",
+            }
+            grouping.extend(periodicity_groupings)
+            sorting.extend([f"-{g}" for g in periodicity_groupings])
+        if per_exercise:
+            grouping.extend(["exercise__code", "exercise__name"])
         filter_dict = {
             "workout__date__range": (start_date, end_date),
         }
@@ -218,7 +228,17 @@ class SetOfExerciseQuerySet(models.QuerySet):
             "total_weight": models.Sum("weight"),
             "total_volume": models.Sum("volume"),
         }
-        result = self.filter(**filter_dict).values(*grouping).annotate(**stats_dict)
+        sorting.append("-total_volume")
+        result = self.filter(**filter_dict).values(*grouping)
+        if periodicity == total_period and not per_exercise:
+            action = "aggregate"
+        else:
+            action = "annotate"
+        result = getattr(result, action)(**stats_dict)
+        try:
+            result = result.order_by(*[f"-{g}" for g in grouping])
+        except AttributeError:
+            pass
         return result
 
 
