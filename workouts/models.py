@@ -220,13 +220,6 @@ class SetOfExerciseQuerySet(models.QuerySet):
         elif periodicity == daily_period:
             grouping |= {"date": models.F("workout__date")}
             sorting.append("-date")
-        if per_exercise:
-            grouping |= {
-                field: models.F(f"exercise__{field}") for field in ["code", "name"]
-            }
-        filter_dict = {
-            "workout__date__range": (start_date, end_date),
-        }
         stats_dict = {
             "n_workouts": models.Count("workout", distinct=True),
             "n_sets": models.Count("id"),
@@ -235,6 +228,14 @@ class SetOfExerciseQuerySet(models.QuerySet):
             "total_volume": models.Sum("volume"),
         }
         sorting.append("-total_volume")
+        if per_exercise:
+            grouping |= {
+                field: models.F(f"exercise__{field}") for field in ["code", "name"]
+            }
+            sorting.append("code")
+        filter_dict = {
+            "workout__date__range": (start_date, end_date),
+        }
         result = self.filter(**filter_dict).values(**grouping)
         if periodicity == total_period and not per_exercise:
             action = "aggregate"
@@ -242,7 +243,7 @@ class SetOfExerciseQuerySet(models.QuerySet):
             action = "annotate"
         result = getattr(result, action)(**stats_dict)
         try:
-            result = result.order_by(*[f"-{g}" for g in grouping])
+            result = result.order_by(*sorting)
         except AttributeError:
             pass
         return result
