@@ -202,7 +202,7 @@ class SetOfExerciseQuerySet(models.QuerySet):
         total_period = "total"
         daily_period = "daily"
         acceptable_period_groupings = timerange_periods + [total_period, daily_period]
-        grouping = []
+        grouping = {}
         sorting = []
         if periodicity not in acceptable_period_groupings:
             raise ValueError(
@@ -212,16 +212,18 @@ class SetOfExerciseQuerySet(models.QuerySet):
         if periodicity in timerange_periods:
             periodicity = periodicity.removesuffix("ly")
             periodicity_groupings = {
-                "workout__date__year",
-                f"workout__date__{periodicity}",
+                "year": models.F("workout__date__year"),
+                periodicity: models.F(f"workout__date__{periodicity}"),
             }
-            grouping.extend(periodicity_groupings)
+            grouping |= periodicity_groupings
             sorting.extend([f"-{g}" for g in periodicity_groupings])
         elif periodicity == daily_period:
-            grouping.append("workout__date")
-            sorting.append("-workout__date")
+            grouping |= {"date": models.F("workout__date")}
+            sorting.append("-date")
         if per_exercise:
-            grouping.extend(["exercise__code", "exercise__name"])
+            grouping |= {
+                field: models.F(f"exercise__{field}") for field in ["code", "name"]
+            }
         filter_dict = {
             "workout__date__range": (start_date, end_date),
         }
@@ -233,7 +235,7 @@ class SetOfExerciseQuerySet(models.QuerySet):
             "total_volume": models.Sum("volume"),
         }
         sorting.append("-total_volume")
-        result = self.filter(**filter_dict).values(*grouping)
+        result = self.filter(**filter_dict).values(**grouping)
         if periodicity == total_period and not per_exercise:
             action = "aggregate"
         else:
