@@ -233,6 +233,10 @@ class SetOfExerciseQuerySet(models.QuerySet):
                 field: models.F(f"exercise__{field}") for field in ["code", "name"]
             }
             sorting.append("code")
+        else:
+            stats_dict |= {
+                "n_unique_exercises": models.Count("exercise", distinct=True),
+            }
         filter_dict = {
             "workout__date__range": (start_date, end_date),
         }
