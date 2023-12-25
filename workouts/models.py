@@ -171,10 +171,19 @@ class SetOfExerciseQuerySet(models.QuerySet):
             sorting.append("-date")
         stats_dict = {
             "n_workouts": models.Count("workout", distinct=True),
-            "n_sets": models.Count("id"),
+            "n_sets": models.Count("id", distinct=True),
             "total_repetitions": models.Sum("n_repetitions"),
+            "max_repetitions": models.Max("n_repetitions"),
+            "min_repetitions": models.Min("n_repetitions"),
+            "avg_repetitions": models.Avg("n_repetitions"),
             "total_weight": models.Sum("weight"),
+            "max_weight": models.Max("weight"),
+            "min_weight": models.Min("weight"),
+            "avg_weight": models.Avg("weight"),
             "total_volume": models.Sum("volume"),
+            "max_volume": models.Max("volume"),
+            "min_volume": models.Min("volume"),
+            "avg_volume": models.Avg("volume"),
         }
         sorting.append("-total_volume")
         if per_exercise:
