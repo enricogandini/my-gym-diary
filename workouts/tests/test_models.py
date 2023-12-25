@@ -159,6 +159,7 @@ def test_duplicate_workout_date_invalid(db, workout_empty):
 def test_load_correct_excel(db, file_name):
     file = DIR_EXCEL / file_name
     df = pd.read_excel(file)
+    n_sets_before = SetOfExercise.objects.count()
     SetOfExercise.objects.create_from_excel(file)
     for row in df.itertuples():
         workout = Workout.objects.get(date=row.Date)
@@ -167,11 +168,11 @@ def test_load_correct_excel(db, file_name):
             notes = row.Notes
         except AttributeError:
             notes = None
-        sets = SetOfExercise.objects.filter(
+        n_sets_after = SetOfExercise.objects.filter(
             workout=workout,
             exercise=exercise,
             n_repetitions=row.Reps,
             weight=row.Weight,
             notes=notes,
-        )
-        assert len(sets) >= 1
+        ).count()
+        assert n_sets_after == n_sets_before + df.shape[0]
