@@ -149,17 +149,29 @@ def test_duplicate_workout_date_invalid(db, workout_empty):
         workout_duplicate.save()
 
 
-def test_load_excel_no_notes(db):
-    file = DIR_EXCEL / "correct_no_notes.xlsx"
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        "correct_with_notes.xlsx",
+        "correct_no_notes.xlsx",
+    ],
+)
+def test_load_correct_excel(db, file_name):
+    file = DIR_EXCEL / file_name
     df = pd.read_excel(file)
     SetOfExercise.objects.create_from_excel(file)
     for row in df.itertuples():
         workout = Workout.objects.get(date=row.Date)
         exercise = Exercise.objects.get(code=row.Exercise)
+        try:
+            notes = row.Notes
+        except AttributeError:
+            notes = None
         sets = SetOfExercise.objects.filter(
             workout=workout,
             exercise=exercise,
             n_repetitions=row.Reps,
             weight=row.Weight,
+            notes=notes,
         )
         assert len(sets) >= 1
