@@ -154,13 +154,16 @@ def test_duplicate_workout_date_invalid(db, workout_empty):
     [
         "correct_with_notes.xlsx",
         "correct_no_notes.xlsx",
+        "correct_1workout_2exercises.xlsx",
     ],
 )
 def test_load_correct_excel(db, file_name):
     file = DIR_EXCEL / file_name
     df = pd.read_excel(file)
     n_sets_before = SetOfExercise.objects.count()
-    SetOfExercise.objects.create_from_excel(file)
+    created_objects = SetOfExercise.objects.create_from_excel(file)
+    n_sets_after = SetOfExercise.objects.count()
+    retrieved_sets = []
     for row in df.itertuples():
         workout = Workout.objects.get(date=row.Date)
         exercise = Exercise.objects.get(code=row.Exercise)
@@ -168,11 +171,18 @@ def test_load_correct_excel(db, file_name):
             notes = row.Notes
         except AttributeError:
             notes = None
-        n_sets_after = SetOfExercise.objects.filter(
+        retrieved_set = SetOfExercise.objects.get(
             workout=workout,
             exercise=exercise,
             n_repetitions=row.Reps,
             weight=row.Weight,
             notes=notes,
-        ).count()
-        assert n_sets_after == n_sets_before + df.shape[0]
+        )
+        retrieved_sets.append(retrieved_set)
+    n_retrieved_sets = len(retrieved_sets)
+    assert n_retrieved_sets == n_sets_after - n_sets_before
+    ids_retrieved_sets = {set_.id for set_ in retrieved_sets}
+    assert len(ids_retrieved_sets) == n_retrieved_sets
+    assert ids_retrieved_sets == set(created_objects["set_of_exercise"])
+    assert len(created_objects["workout"]) == df["Date"].nunique()
+    assert len(created_objects["exercise"]) == df["Exercise"].nunique()
