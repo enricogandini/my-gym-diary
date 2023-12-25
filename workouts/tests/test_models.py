@@ -9,7 +9,7 @@ from django.db.utils import IntegrityError
 from workouts.models import Exercise, SetOfExercise, Workout
 
 DIR_TEST_DATA = Path(__file__).parent.resolve() / "data"
-DIR_EXCEL = DIR_TEST_DATA / "set_of_exercise"
+DIR_EXCEL = DIR_TEST_DATA / "excel"
 
 
 @pytest.fixture
