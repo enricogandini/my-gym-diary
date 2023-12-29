@@ -149,16 +149,18 @@ def test_duplicate_workout_date_invalid(db, workout_empty):
         workout_duplicate.save()
 
 
-@pytest.mark.parametrize(
-    "file_name",
-    [
+_CORRECT_EXCEL_FILES = [
+    DIR_EXCEL / file_name
+    for file_name in [
         "correct_with_notes.xlsx",
         "correct_no_notes.xlsx",
         "correct_1workout_2exercises.xlsx",
-    ],
-)
-def test_load_correct_excel(db, file_name):
-    file = DIR_EXCEL / file_name
+    ]
+]
+
+
+@pytest.mark.parametrize("file", _CORRECT_EXCEL_FILES)
+def test_load_correct_excel(db, file):
     df = pd.read_excel(file)
     n_sets_before = SetOfExercise.objects.count()
     created_objects = SetOfExercise.objects.create_from_excel(file)
