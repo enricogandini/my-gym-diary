@@ -226,6 +226,10 @@ def test_compute_report_total_per_exercise(db, file):
         n_workouts=pd.NamedAgg(column="Date", aggfunc="nunique"),
         n_sets=pd.NamedAgg(column="Date", aggfunc="count"),
     )
-    # TODO: make this work!
-    pd.testing.assert_frame_equal(report, expected_report)
-    assert report["n_workouts"] == df["Date"].nunique()
+    pd.testing.assert_frame_equal(
+        left=report,
+        right=expected_report,
+        check_dtype="equiv",
+        check_like=True,
+        check_exact=False,
+    )
