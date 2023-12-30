@@ -203,8 +203,13 @@ def test_compute_report_total_per_exercise(db, file):
     report = SetOfExercise.objects.compute_report(
         start_date=start_date, end_date=end_date, periodicity="total", per_exercise=True
     )
-    report = pd.DataFrame(report).drop(columns="name").set_index("code")
-    assert report.shape[0] == df["Exercise"].nunique()
+    report = (
+        pd.DataFrame.from_records(report, coerce_float=True)
+        .drop(columns="name")
+        .sort_values("code")
+        .set_index("code")
+    )
+    assert report.shape[0] == df["code"].nunique()
     expected_report = df.groupby("code").agg(
         max_volume=pd.NamedAgg(column="volume", aggfunc="max"),
         min_volume=pd.NamedAgg(column="volume", aggfunc="min"),
@@ -221,5 +226,6 @@ def test_compute_report_total_per_exercise(db, file):
         n_workouts=pd.NamedAgg(column="Date", aggfunc="nunique"),
         n_sets=pd.NamedAgg(column="Date", aggfunc="count"),
     )
-    assert report.equals(expected_report)
+    # TODO: make this work!
+    pd.testing.assert_frame_equal(report, expected_report)
     assert report["n_workouts"] == df["Date"].nunique()
