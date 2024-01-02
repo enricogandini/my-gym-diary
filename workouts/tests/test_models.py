@@ -282,3 +282,56 @@ def test_compute_report_total_across_exercises(db, file):
         check_like=True,
         check_exact=False,
     )
+
+
+@pytest.mark.parametrize("file", _CORRECT_EXCEL_FILES)
+def test_compute_report_yearly_per_exercise(db, file):
+    df = (
+        pd.read_excel(file)
+        .assign(volume=lambda df_: df_["Reps"] * df_["Weight"])
+        .rename(columns={"Exercise": "code"})
+    )
+    start_date = df["Date"].min().date()
+    end_date = df["Date"].max().date()
+    SetOfExercise.objects.create_from_excel(file)
+    report = SetOfExercise.objects.compute_report(
+        start_date=start_date,
+        end_date=end_date,
+        periodicity="yearly",
+        per_exercise=True,
+    )
+    assert isinstance(report, models.QuerySet)
+    report = (
+        pd.DataFrame.from_records(report, coerce_float=True)
+        .drop(columns="name")
+        .set_index(["code", "year"])
+    )
+    assert report.shape[0] == df["code"].nunique()
+    expected_report = (
+        df.groupby(["code", df["Date"].dt.year])
+        .agg(
+            max_volume=pd.NamedAgg(column="volume", aggfunc="max"),
+            min_volume=pd.NamedAgg(column="volume", aggfunc="min"),
+            avg_volume=pd.NamedAgg(column="volume", aggfunc="mean"),
+            total_volume=pd.NamedAgg(column="volume", aggfunc="sum"),
+            max_weight=pd.NamedAgg(column="Weight", aggfunc="max"),
+            min_weight=pd.NamedAgg(column="Weight", aggfunc="min"),
+            avg_weight=pd.NamedAgg(column="Weight", aggfunc="mean"),
+            total_weight=pd.NamedAgg(column="Weight", aggfunc="sum"),
+            max_repetitions=pd.NamedAgg(column="Reps", aggfunc="max"),
+            min_repetitions=pd.NamedAgg(column="Reps", aggfunc="min"),
+            avg_repetitions=pd.NamedAgg(column="Reps", aggfunc="mean"),
+            total_repetitions=pd.NamedAgg(column="Reps", aggfunc="sum"),
+            n_workouts=pd.NamedAgg(column="Date", aggfunc="nunique"),
+            n_sets=pd.NamedAgg(column="Date", aggfunc="count"),
+        )
+        .rename_axis(index=["code", "year"])
+    )
+    pd.testing.assert_frame_equal(
+        left=report,
+        right=expected_report,
+        check_dtype="equiv",
+        check_index_type=False,
+        check_like=True,
+        check_exact=False,
+    )
