@@ -206,7 +206,6 @@ def test_compute_report_total_per_exercise(db, file):
     report = (
         pd.DataFrame.from_records(report, coerce_float=True)
         .drop(columns="name")
-        .sort_values("code")
         .set_index("code")
     )
     assert report.shape[0] == df["code"].nunique()
