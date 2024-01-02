@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.db.utils import IntegrityError
 
 from workouts.models import Exercise, SetOfExercise, Workout
@@ -203,6 +204,7 @@ def test_compute_report_total_per_exercise(db, file):
     report = SetOfExercise.objects.compute_report(
         start_date=start_date, end_date=end_date, periodicity="total", per_exercise=True
     )
+    assert isinstance(report, models.QuerySet)
     report = (
         pd.DataFrame.from_records(report, coerce_float=True)
         .drop(columns="name")
