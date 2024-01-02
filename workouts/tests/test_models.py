@@ -1,4 +1,5 @@
 import datetime
+from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
@@ -160,16 +161,35 @@ _CORRECT_EXCEL_FILES = [
 ]
 
 
-@pytest.mark.parametrize("file", _CORRECT_EXCEL_FILES)
-def test_load_correct_excel(db, file):
-    df = pd.read_excel(file)
+@dataclass(frozen=True)
+class ExcelData:
+    file: Path
+    df: pd.DataFrame
+    start_date: datetime.date
+    end_date: datetime.date
+
+
+@pytest.fixture(params=_CORRECT_EXCEL_FILES)
+def excel_data(request):
+    file = request.param
+    df = (
+        pd.read_excel(file)
+        .assign(volume=lambda df_: df_["Reps"] * df_["Weight"])
+        .rename(columns={"Exercise": "code"})
+    )
+    start_date = df["Date"].min().date()
+    end_date = df["Date"].max().date()
+    return ExcelData(file=file, df=df, start_date=start_date, end_date=end_date)
+
+
+def test_load_correct_excel(db, excel_data: ExcelData):
     n_sets_before = SetOfExercise.objects.count()
-    created_objects = SetOfExercise.objects.create_from_excel(file)
+    created_objects = SetOfExercise.objects.create_from_excel(excel_data.file)
     n_sets_after = SetOfExercise.objects.count()
     retrieved_sets = []
-    for row in df.itertuples():
+    for row in excel_data.df.itertuples():
         workout = Workout.objects.get(date=row.Date)
-        exercise = Exercise.objects.get(code=row.Exercise)
+        exercise = Exercise.objects.get(code=row.code)
         try:
             notes = row.Notes
         except AttributeError:
@@ -187,22 +207,17 @@ def test_load_correct_excel(db, file):
     ids_retrieved_sets = {set_.id for set_ in retrieved_sets}
     assert len(ids_retrieved_sets) == n_retrieved_sets
     assert ids_retrieved_sets == set(created_objects["set_of_exercise"])
-    assert len(created_objects["workout"]) == df["Date"].nunique()
-    assert len(created_objects["exercise"]) == df["Exercise"].nunique()
+    assert len(created_objects["workout"]) == excel_data.df["Date"].nunique()
+    assert len(created_objects["exercise"]) == excel_data.df["code"].nunique()
 
 
-@pytest.mark.parametrize("file", _CORRECT_EXCEL_FILES)
-def test_compute_report_total_per_exercise(db, file):
-    df = (
-        pd.read_excel(file)
-        .assign(volume=lambda df_: df_["Reps"] * df_["Weight"])
-        .rename(columns={"Exercise": "code"})
-    )
-    start_date = df["Date"].min().date()
-    end_date = df["Date"].max().date()
-    SetOfExercise.objects.create_from_excel(file)
+def test_compute_report_total_per_exercise(db, excel_data: ExcelData):
+    SetOfExercise.objects.create_from_excel(excel_data.file)
     report = SetOfExercise.objects.compute_report(
-        start_date=start_date, end_date=end_date, periodicity="total", per_exercise=True
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
+        periodicity="total",
+        per_exercise=True,
     )
     assert isinstance(report, models.QuerySet)
     report = (
@@ -210,8 +225,8 @@ def test_compute_report_total_per_exercise(db, file):
         .drop(columns="name")
         .set_index("code")
     )
-    assert report.shape[0] == df["code"].nunique()
-    expected_report = df.groupby("code").agg(
+    assert report.shape[0] == excel_data.df["code"].nunique()
+    expected_report = excel_data.df.groupby("code").agg(
         max_volume=pd.NamedAgg(column="volume", aggfunc="max"),
         min_volume=pd.NamedAgg(column="volume", aggfunc="min"),
         avg_volume=pd.NamedAgg(column="volume", aggfunc="mean"),
@@ -236,26 +251,18 @@ def test_compute_report_total_per_exercise(db, file):
     )
 
 
-@pytest.mark.parametrize("file", _CORRECT_EXCEL_FILES)
-def test_compute_report_total_across_exercises(db, file):
-    df = (
-        pd.read_excel(file)
-        .assign(volume=lambda df_: df_["Reps"] * df_["Weight"])
-        .rename(columns={"Exercise": "code"})
-    )
-    start_date = df["Date"].min().date()
-    end_date = df["Date"].max().date()
-    SetOfExercise.objects.create_from_excel(file)
+def test_compute_report_total_across_exercises(db, excel_data: ExcelData):
+    SetOfExercise.objects.create_from_excel(excel_data.file)
     report = SetOfExercise.objects.compute_report(
-        start_date=start_date,
-        end_date=end_date,
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
         periodicity="total",
         per_exercise=False,
     )
     assert isinstance(report, dict), "Report is not a final aggregation!"
     report = pd.DataFrame.from_records([report], coerce_float=True)
     expected_report = (
-        df.groupby("Date")
+        excel_data.df.groupby("Date")
         .agg(
             max_volume=pd.NamedAgg(column="volume", aggfunc="max"),
             min_volume=pd.NamedAgg(column="volume", aggfunc="min"),
@@ -284,16 +291,15 @@ def test_compute_report_total_across_exercises(db, file):
     )
 
 
-@pytest.mark.parametrize("file", _CORRECT_EXCEL_FILES)
-def test_compute_report_yearly_per_exercise(db, file):
+def test_compute_report_yearly_per_exercise(db, excel_data: ExcelData):
     df = (
-        pd.read_excel(file)
+        pd.read_excel(excel_data.file)
         .assign(volume=lambda df_: df_["Reps"] * df_["Weight"])
         .rename(columns={"Exercise": "code"})
     )
     start_date = df["Date"].min().date()
     end_date = df["Date"].max().date()
-    SetOfExercise.objects.create_from_excel(file)
+    SetOfExercise.objects.create_from_excel(excel_data.file)
     report = SetOfExercise.objects.compute_report(
         start_date=start_date,
         end_date=end_date,
