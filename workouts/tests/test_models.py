@@ -211,6 +211,57 @@ def test_load_correct_excel(db, excel_data: ExcelData):
     assert len(created_objects["exercise"]) == excel_data.df["code"].nunique()
 
 
+def compute_expected_report(
+    df: pd.DataFrame, periodicity: str, per_exercise: bool
+) -> pd.DataFrame:
+    aggregations = {
+        "max_volume": pd.NamedAgg(column="volume", aggfunc="max"),
+        "min_volume": pd.NamedAgg(column="volume", aggfunc="min"),
+        "avg_volume": pd.NamedAgg(column="volume", aggfunc="mean"),
+        "total_volume": pd.NamedAgg(column="volume", aggfunc="sum"),
+        "max_weight": pd.NamedAgg(column="Weight", aggfunc="max"),
+        "min_weight": pd.NamedAgg(column="Weight", aggfunc="min"),
+        "avg_weight": pd.NamedAgg(column="Weight", aggfunc="mean"),
+        "total_weight": pd.NamedAgg(column="Weight", aggfunc="sum"),
+        "max_repetitions": pd.NamedAgg(column="Reps", aggfunc="max"),
+        "min_repetitions": pd.NamedAgg(column="Reps", aggfunc="min"),
+        "avg_repetitions": pd.NamedAgg(column="Reps", aggfunc="mean"),
+        "total_repetitions": pd.NamedAgg(column="Reps", aggfunc="sum"),
+        "n_workouts": pd.NamedAgg(column="Date", aggfunc="nunique"),
+        "n_sets": pd.NamedAgg(column="Date", aggfunc="count"),
+    }
+    grouping = []
+    match periodicity:
+        case "yearly":
+            grouping.append(df["Date"].dt.year)
+        case "monthly":
+            grouping.append(df["Date"].dt.month)
+        case "weekly":
+            grouping.append(df["Date"].dt.week)
+        case "daily":
+            grouping.append(df["Date"])
+        case "total":
+            pass
+        case _:
+            raise ValueError(f"Invalid periodicity {periodicity}.")
+    if per_exercise:
+        grouping.append("code")
+    else:
+        aggregations["n_unique_exercises"] = pd.NamedAgg(
+            column="code", aggfunc="nunique"
+        )
+    if grouping:
+        report = df.groupby(grouping).agg(**aggregations)
+    else:
+        # report = df.agg(**aggregations).T.sum(skipna=True).to_frame().T
+        report = {
+            aggregation_name: df[aggregation.column].apply(aggregation.aggfunc)
+            for aggregation_name, aggregation in aggregations.items()
+        }
+        report = pd.DataFrame.from_records([report])
+    return report
+
+
 def test_compute_report_total_per_exercise(db, excel_data: ExcelData):
     SetOfExercise.objects.create_from_excel(excel_data.file)
     report = SetOfExercise.objects.compute_report(
@@ -226,21 +277,8 @@ def test_compute_report_total_per_exercise(db, excel_data: ExcelData):
         .set_index("code")
     )
     assert report.shape[0] == excel_data.df["code"].nunique()
-    expected_report = excel_data.df.groupby("code").agg(
-        max_volume=pd.NamedAgg(column="volume", aggfunc="max"),
-        min_volume=pd.NamedAgg(column="volume", aggfunc="min"),
-        avg_volume=pd.NamedAgg(column="volume", aggfunc="mean"),
-        total_volume=pd.NamedAgg(column="volume", aggfunc="sum"),
-        max_weight=pd.NamedAgg(column="Weight", aggfunc="max"),
-        min_weight=pd.NamedAgg(column="Weight", aggfunc="min"),
-        avg_weight=pd.NamedAgg(column="Weight", aggfunc="mean"),
-        total_weight=pd.NamedAgg(column="Weight", aggfunc="sum"),
-        max_repetitions=pd.NamedAgg(column="Reps", aggfunc="max"),
-        min_repetitions=pd.NamedAgg(column="Reps", aggfunc="min"),
-        avg_repetitions=pd.NamedAgg(column="Reps", aggfunc="mean"),
-        total_repetitions=pd.NamedAgg(column="Reps", aggfunc="sum"),
-        n_workouts=pd.NamedAgg(column="Date", aggfunc="nunique"),
-        n_sets=pd.NamedAgg(column="Date", aggfunc="count"),
+    expected_report = compute_expected_report(
+        excel_data.df, periodicity="total", per_exercise=True
     )
     pd.testing.assert_frame_equal(
         left=report,
@@ -261,26 +299,8 @@ def test_compute_report_total_across_exercises(db, excel_data: ExcelData):
     )
     assert isinstance(report, dict), "Report is not a final aggregation!"
     report = pd.DataFrame.from_records([report], coerce_float=True)
-    expected_report = (
-        excel_data.df.groupby("Date")
-        .agg(
-            max_volume=pd.NamedAgg(column="volume", aggfunc="max"),
-            min_volume=pd.NamedAgg(column="volume", aggfunc="min"),
-            avg_volume=pd.NamedAgg(column="volume", aggfunc="mean"),
-            total_volume=pd.NamedAgg(column="volume", aggfunc="sum"),
-            max_weight=pd.NamedAgg(column="Weight", aggfunc="max"),
-            min_weight=pd.NamedAgg(column="Weight", aggfunc="min"),
-            avg_weight=pd.NamedAgg(column="Weight", aggfunc="mean"),
-            total_weight=pd.NamedAgg(column="Weight", aggfunc="sum"),
-            max_repetitions=pd.NamedAgg(column="Reps", aggfunc="max"),
-            min_repetitions=pd.NamedAgg(column="Reps", aggfunc="min"),
-            avg_repetitions=pd.NamedAgg(column="Reps", aggfunc="mean"),
-            total_repetitions=pd.NamedAgg(column="Reps", aggfunc="sum"),
-            n_workouts=pd.NamedAgg(column="Date", aggfunc="nunique"),
-            n_sets=pd.NamedAgg(column="Date", aggfunc="count"),
-            n_unique_exercises=pd.NamedAgg(column="code", aggfunc="nunique"),
-        )
-        .reset_index(drop=True)
+    expected_report = compute_expected_report(
+        excel_data.df, periodicity="total", per_exercise=False
     )
     pd.testing.assert_frame_equal(
         left=report,
