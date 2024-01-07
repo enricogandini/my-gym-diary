@@ -231,17 +231,17 @@ def compute_expected_report(
         "n_sets": pd.NamedAgg(column="Date", aggfunc="count"),
     }
     grouping = []
-    map_rename_index = {}
     match periodicity:
         case "yearly":
-            grouping.append(df["Date"].dt.year)
-            map_rename_index["Date"] = "year"
+            grouping.append(df["Date"].dt.year.rename("year"))
         case "monthly":
-            grouping.append(df["Date"].dt.month)
-            map_rename_index["Date"] = "month"
+            grouping.extend(
+                [df["Date"].dt.year.rename("year"), df["Date"].dt.month.rename("month")]
+            )
         case "weekly":
-            grouping.append(df["Date"].dt.week)
-            map_rename_index["Date"] = "week"
+            grouping.extend(
+                [df["Date"].dt.year.rename("year"), df["Date"].dt.week.rename("week")]
+            )
         case "daily":
             grouping.append(df["Date"])
         case "total":
@@ -255,9 +255,7 @@ def compute_expected_report(
             column="code", aggfunc="nunique"
         )
     if grouping:
-        report = (
-            df.groupby(grouping).agg(**aggregations).rename_axis(index=map_rename_index)
-        )
+        report = df.groupby(grouping).agg(**aggregations)
     else:
         report = {
             aggregation_name: df[aggregation.column].apply(aggregation.aggfunc)
@@ -356,6 +354,34 @@ def test_compute_report_yearly_across_exercises(db, excel_data: ExcelData):
     report = pd.DataFrame.from_records(report, coerce_float=True).set_index("year")
     expected_report = compute_expected_report(
         excel_data.df, periodicity="yearly", per_exercise=False
+    )
+    pd.testing.assert_frame_equal(
+        left=report,
+        right=expected_report,
+        check_dtype="equiv",
+        check_index_type=False,
+        check_like=True,
+        check_exact=False,
+    )
+
+
+def test_compute_report_monthly_per_exercise(db, excel_data: ExcelData):
+    SetOfExercise.objects.create_from_excel(excel_data.file)
+    report = SetOfExercise.objects.compute_report(
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
+        periodicity="monthly",
+        per_exercise=True,
+    )
+    assert isinstance(report, models.QuerySet)
+    report = (
+        pd.DataFrame.from_records(report, coerce_float=True)
+        .drop(columns="name")
+        .set_index(["code", "year", "month"])
+    )
+    assert report.shape[0] == excel_data.df["code"].nunique()
+    expected_report = compute_expected_report(
+        excel_data.df, periodicity="monthly", per_exercise=True
     )
     pd.testing.assert_frame_equal(
         left=report,
