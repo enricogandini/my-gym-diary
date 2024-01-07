@@ -157,6 +157,7 @@ _CORRECT_EXCEL_FILES = [
         "correct_with_notes.xlsx",
         "correct_no_notes.xlsx",
         "correct_1workout_2exercises.xlsx",
+        "correct_3workout_3exercises.xlsx",
     ]
 ]
 
@@ -435,7 +436,6 @@ def test_compute_report_weekly_per_exercise(db, excel_data: ExcelData):
         .drop(columns="name")
         .set_index(["code", "year", "week"])
     )
-    assert report.shape[0] == excel_data.df["code"].nunique()
     expected_report = compute_expected_report(
         excel_data.df, periodicity="weekly", per_exercise=True
     )
