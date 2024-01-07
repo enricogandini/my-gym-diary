@@ -240,7 +240,10 @@ def compute_expected_report(
             )
         case "weekly":
             grouping.extend(
-                [df["Date"].dt.year.rename("year"), df["Date"].dt.week.rename("week")]
+                [
+                    df["Date"].dt.year.rename("year"),
+                    df["Date"].apply(lambda d: d.week).rename("week"),
+                ]
             )
         case "daily":
             grouping.append(df["Date"])
@@ -407,6 +410,59 @@ def test_compute_report_monthly_across_exercises(db, excel_data: ExcelData):
     )
     expected_report = compute_expected_report(
         excel_data.df, periodicity="monthly", per_exercise=False
+    )
+    pd.testing.assert_frame_equal(
+        left=report,
+        right=expected_report,
+        check_dtype="equiv",
+        check_index_type=False,
+        check_like=True,
+        check_exact=False,
+    )
+
+
+def test_compute_report_weekly_per_exercise(db, excel_data: ExcelData):
+    SetOfExercise.objects.create_from_excel(excel_data.file)
+    report = SetOfExercise.objects.compute_report(
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
+        periodicity="weekly",
+        per_exercise=True,
+    )
+    assert isinstance(report, models.QuerySet)
+    report = (
+        pd.DataFrame.from_records(report, coerce_float=True)
+        .drop(columns="name")
+        .set_index(["code", "year", "week"])
+    )
+    assert report.shape[0] == excel_data.df["code"].nunique()
+    expected_report = compute_expected_report(
+        excel_data.df, periodicity="weekly", per_exercise=True
+    )
+    pd.testing.assert_frame_equal(
+        left=report,
+        right=expected_report,
+        check_dtype="equiv",
+        check_index_type=False,
+        check_like=True,
+        check_exact=False,
+    )
+
+
+def test_compute_report_weekly_across_exercises(db, excel_data: ExcelData):
+    SetOfExercise.objects.create_from_excel(excel_data.file)
+    report = SetOfExercise.objects.compute_report(
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
+        periodicity="weekly",
+        per_exercise=False,
+    )
+    assert isinstance(report, models.QuerySet)
+    report = pd.DataFrame.from_records(report, coerce_float=True).set_index(
+        ["year", "week"]
+    )
+    expected_report = compute_expected_report(
+        excel_data.df, periodicity="weekly", per_exercise=False
     )
     pd.testing.assert_frame_equal(
         left=report,
