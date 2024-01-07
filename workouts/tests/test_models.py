@@ -246,7 +246,7 @@ def compute_expected_report(
                 ]
             )
         case "daily":
-            grouping.append(df["Date"])
+            grouping.append(df["Date"].rename("date"))
         case "total":
             pass
         case _:
@@ -463,6 +463,61 @@ def test_compute_report_weekly_across_exercises(db, excel_data: ExcelData):
     )
     expected_report = compute_expected_report(
         excel_data.df, periodicity="weekly", per_exercise=False
+    )
+    pd.testing.assert_frame_equal(
+        left=report,
+        right=expected_report,
+        check_dtype="equiv",
+        check_index_type=False,
+        check_like=True,
+        check_exact=False,
+    )
+
+
+def test_compute_report_daily_per_exercise(db, excel_data: ExcelData):
+    SetOfExercise.objects.create_from_excel(excel_data.file)
+    report = SetOfExercise.objects.compute_report(
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
+        periodicity="daily",
+        per_exercise=True,
+    )
+    assert isinstance(report, models.QuerySet)
+    report = (
+        pd.DataFrame.from_records(report, coerce_float=True)
+        .drop(columns="name")
+        .astype({"date": "datetime64[ns]"})
+        .set_index(["code", "date"])
+    )
+    expected_report = compute_expected_report(
+        excel_data.df, periodicity="daily", per_exercise=True
+    )
+    pd.testing.assert_frame_equal(
+        left=report,
+        right=expected_report,
+        check_dtype="equiv",
+        check_index_type=False,
+        check_like=True,
+        check_exact=False,
+    )
+
+
+def test_compute_report_daily_across_exercises(db, excel_data: ExcelData):
+    SetOfExercise.objects.create_from_excel(excel_data.file)
+    report = SetOfExercise.objects.compute_report(
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
+        periodicity="daily",
+        per_exercise=False,
+    )
+    assert isinstance(report, models.QuerySet)
+    report = (
+        pd.DataFrame.from_records(report, coerce_float=True)
+        .astype({"date": "datetime64[ns]"})
+        .set_index("date")
+    )
+    expected_report = compute_expected_report(
+        excel_data.df, periodicity="daily", per_exercise=False
     )
     pd.testing.assert_frame_equal(
         left=report,
