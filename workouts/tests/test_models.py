@@ -317,17 +317,10 @@ def test_compute_report_total_across_exercises(db, excel_data: ExcelData):
 
 
 def test_compute_report_yearly_per_exercise(db, excel_data: ExcelData):
-    df = (
-        pd.read_excel(excel_data.file)
-        .assign(volume=lambda df_: df_["Reps"] * df_["Weight"])
-        .rename(columns={"Exercise": "code"})
-    )
-    start_date = df["Date"].min().date()
-    end_date = df["Date"].max().date()
     SetOfExercise.objects.create_from_excel(excel_data.file)
     report = SetOfExercise.objects.compute_report(
-        start_date=start_date,
-        end_date=end_date,
+        start_date=excel_data.start_date,
+        end_date=excel_data.end_date,
         periodicity="yearly",
         per_exercise=True,
     )
@@ -337,9 +330,9 @@ def test_compute_report_yearly_per_exercise(db, excel_data: ExcelData):
         .drop(columns="name")
         .set_index(["code", "year"])
     )
-    assert report.shape[0] == df["code"].nunique()
+    assert report.shape[0] == excel_data.df["code"].nunique()
     expected_report = compute_expected_report(
-        df, periodicity="yearly", per_exercise=True
+        excel_data.df, periodicity="yearly", per_exercise=True
     )
     pd.testing.assert_frame_equal(
         left=report,
