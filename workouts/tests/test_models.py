@@ -156,8 +156,8 @@ _CORRECT_EXCEL_FILES = [
     for file_name in [
         "correct_with_notes.xlsx",
         "correct_no_notes.xlsx",
-        "correct_1workout_2exercises.xlsx",
-        "correct_3workout_3exercises.xlsx",
+        "correct_1workout_2exercise.xlsx",
+        "correct_3workout_3exercise.xlsx",
     ]
 ]
 
