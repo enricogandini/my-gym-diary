@@ -300,7 +300,8 @@ def test_compute_report(
     db, excel_data: ExcelData, report_params: ReportParams, user: CustomUser
 ):
     SetOfExercise.objects.create_from_excel_for_user(excel_data.file, user=user)
-    report = SetOfExercise.objects.compute_report(
+    report = SetOfExercise.objects.compute_report_for_user(
+        user=user,
         start_date=excel_data.start_date,
         end_date=excel_data.end_date,
         **report_params.__dict__,

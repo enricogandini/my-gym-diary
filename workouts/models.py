@@ -117,6 +117,10 @@ class SetOfExerciseQuerySet(models.QuerySet):
     _pattern_repetitions_range_between = re.compile(r"^(?P<low>\d+)-(?P<high>\d+)$")
     _pattern_repetitions_range_greater = re.compile(r"^>(?P<low>\d+)$")
 
+    def with_user(self, user: CustomUser) -> models.QuerySet:
+        """Filter by user."""
+        return self.filter(workout__user=user)
+
     def named_repetitions_range(self, range: str) -> models.QuerySet:
         """Filter by named repetitions range."""
         try:
@@ -149,8 +153,9 @@ class SetOfExerciseQuerySet(models.QuerySet):
             print("No filter applied")
             return self
 
-    def compute_report(
+    def compute_report_for_user(
         self,
+        user: CustomUser,
         start_date: datetime.date,
         end_date: datetime.date,
         periodicity: str,
@@ -207,7 +212,7 @@ class SetOfExerciseQuerySet(models.QuerySet):
         filter_dict = {
             "workout__date__range": (start_date, end_date),
         }
-        result = self.filter(**filter_dict).values(**grouping)
+        result = self.with_user(user).filter(**filter_dict).values(**grouping)
         if periodicity == total_period and not per_exercise:
             action = "aggregate"
         else:
