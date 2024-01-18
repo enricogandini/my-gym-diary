@@ -9,6 +9,7 @@ from django.db import models
 from django.db.utils import IntegrityError
 from more_itertools import unique_everseen
 
+from accounts.models import CustomUser
 from workouts.models import Exercise, SetOfExercise, Workout
 
 DIR_TEST_DATA = Path(__file__).parent.resolve() / "data"
@@ -16,8 +17,17 @@ DIR_EXCEL = DIR_TEST_DATA / "excel"
 
 
 @pytest.fixture
-def workout_empty(transactional_db):
-    workout = Workout(date=datetime.date(2000, 1, 1))
+def user(transactional_db):
+    user = CustomUser.objects.create(
+        username="test_user", email="test-user@test-email.com"
+    )
+    yield user
+    user.delete()
+
+
+@pytest.fixture
+def workout_empty(transactional_db, user: CustomUser):
+    workout = Workout(date=datetime.date(2000, 1, 1), user=user)
     workout.save()
     yield workout
     workout.delete()
@@ -144,8 +154,8 @@ def test_ok_exercise_same_code_and_name(db):
     exercise.delete()
 
 
-def test_duplicate_workout_date_invalid(db, workout_empty):
-    workout_duplicate = Workout(date=workout_empty.date)
+def test_duplicate_workout_date_for_user_invalid(db, workout_empty: Workout):
+    workout_duplicate = Workout(date=workout_empty.date, user=workout_empty.user)
     with pytest.raises(ValidationError):
         workout_duplicate.full_clean()
     with pytest.raises(IntegrityError):
@@ -184,9 +194,11 @@ def excel_data(request):
     return ExcelData(file=file, df=df, start_date=start_date, end_date=end_date)
 
 
-def test_load_correct_excel(db, excel_data: ExcelData):
+def test_load_correct_excel(db, excel_data: ExcelData, user: CustomUser):
     n_sets_before = SetOfExercise.objects.count()
-    created_objects = SetOfExercise.objects.create_from_excel(excel_data.file)
+    created_objects = SetOfExercise.objects.create_from_excel_for_user(
+        excel_data.file, user=user
+    )
     n_sets_after = SetOfExercise.objects.count()
     retrieved_sets = []
     for row in excel_data.df.itertuples():
@@ -284,8 +296,10 @@ ALL_REPORT_PARAMS = [
 
 
 @pytest.mark.parametrize("report_params", ALL_REPORT_PARAMS)
-def test_compute_report(db, excel_data: ExcelData, report_params: ReportParams):
-    SetOfExercise.objects.create_from_excel(excel_data.file)
+def test_compute_report(
+    db, excel_data: ExcelData, report_params: ReportParams, user: CustomUser
+):
+    SetOfExercise.objects.create_from_excel_for_user(excel_data.file, user=user)
     report = SetOfExercise.objects.compute_report(
         start_date=excel_data.start_date,
         end_date=excel_data.end_date,

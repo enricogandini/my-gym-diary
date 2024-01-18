@@ -9,6 +9,8 @@ import pandas as pd
 from django.core.validators import RegexValidator
 from django.db import models
 
+from accounts.models import CustomUser
+
 validator_only_latin_letters = RegexValidator(
     r"^[a-zA-Z]*$", message="Only latin letters are allowed."
 )
@@ -59,10 +61,15 @@ class Exercise(models.Model):
 
 
 class Workout(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     date = models.DateField()
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["date"], name="unique_date")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "date"], name="unique_user_date_workout"
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.date}"
@@ -73,8 +80,10 @@ class Workout(models.Model):
 
 
 class SetOfExerciseManager(models.Manager):
-    def create_from_excel(self, path: Path) -> dict[str, list[int]]:
-        """Create a set of exercises from an Excel file."""
+    def create_from_excel_for_user(
+        self, path: Path, user: CustomUser
+    ) -> dict[str, list[int]]:
+        """Create a set of exercises from an Excel file for a user."""
         df = pd.read_excel(path)
         created_objects = defaultdict(list)
         for id_row, row in df.iterrows():
@@ -87,7 +96,7 @@ class SetOfExerciseManager(models.Manager):
                     )
                     created_objects["exercise"].append(exercise.pk)
                 workout, workout_created = Workout.objects.get_or_create(
-                    date=row["Date"]
+                    date=row["Date"], user=user
                 )
                 if workout_created:
                     created_objects["workout"].append(workout.pk)
