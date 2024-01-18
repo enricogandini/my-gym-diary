@@ -27,16 +27,14 @@ def user(transactional_db):
 
 @pytest.fixture
 def workout_empty(transactional_db, user: CustomUser):
-    workout = Workout(date=datetime.date(2000, 1, 1), user=user)
-    workout.save()
+    workout = Workout.objects.create(date=datetime.date(2000, 1, 1), user=user)
     yield workout
     workout.delete()
 
 
 @pytest.fixture
 def exercise(transactional_db):
-    exercise = Exercise(code="hello", name="Hello Gym")
-    exercise.save()
+    exercise = Exercise.objects.create(code="hello", name="Hello Gym")
     yield exercise
     exercise.delete()
 
