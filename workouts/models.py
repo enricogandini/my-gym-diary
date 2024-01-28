@@ -54,7 +54,9 @@ class MovementPattern(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(models.functions.Lower("name"), name="unique_name"),
+            models.UniqueConstraint(
+                models.functions.Lower("name"), name="unique_movement_pattern"
+            ),
         ]
 
     def __str__(self) -> str:
@@ -75,7 +77,9 @@ class MuscleGroup(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(models.functions.Lower("name"), name="unique_name"),
+            models.UniqueConstraint(
+                models.functions.Lower("name"), name="unique_muscle_group"
+            ),
         ]
 
     def __str__(self) -> str:
@@ -94,6 +98,9 @@ class MuscleGroupOfExercise(models.Model):
             )
         ]
 
+    def __str__(self) -> str:
+        return f"{self.exercise.code}: {self.muscle_group.name}"
+
 
 class Exercise(models.Model):
     code = models.CharField(
@@ -107,12 +114,13 @@ class Exercise(models.Model):
         MovementPattern,
         on_delete=models.SET_DEFAULT,
         default=MovementPattern.get_default_pk,
+        help_text="What kind of movement is this exercise?",
     )
     muscle_groups = models.ManyToManyField(
         MuscleGroup,
         through=MuscleGroupOfExercise,
-        on_delete=models.SET_DEFAULT,
         default=MuscleGroup.get_default_pk,
+        help_text="What muscle groups does this exercise work?",
     )
 
     class Meta:
