@@ -45,6 +45,13 @@ class MovementPattern(models.Model):
         max_length=25, unique=True, validators=[validator_latin_words_single_spaces]
     )
 
+    _DEFAULT_NAME = "Unknown"
+
+    @classmethod
+    def get_default_pk(cls) -> int:
+        obj, _ = cls.objects.get_or_create(name=cls._DEFAULT_NAME)
+        return obj.pk
+
     class Meta:
         constraints = [
             models.UniqueConstraint(models.functions.Lower("name"), name="unique_name"),
@@ -52,27 +59,6 @@ class MovementPattern(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name}"
-
-
-class MovementPatternOfExercise(models.Model):
-    exercise = models.ForeignKey("Exercise", on_delete=models.CASCADE)
-    movement_pattern = models.ForeignKey(MovementPattern, on_delete=models.CASCADE)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["exercise", "movement_pattern"],
-                name="unique_exercise_movement_pattern",
-            )
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.exercise.code}: {self.movement_pattern.name}"
-
-
-def _get_default_movement_pattern_pk() -> int:
-    result = MovementPattern.objects.get_or_create(name="Unknown")
-    return result[0].pk
 
 
 class MuscleGroup(models.Model):
@@ -80,6 +66,13 @@ class MuscleGroup(models.Model):
         max_length=25, unique=True, validators=[validator_latin_words_single_spaces]
     )
 
+    _DEFAULT_NAME = "Unknown"
+
+    @classmethod
+    def get_default_pk(cls) -> int:
+        obj, _ = cls.objects.get_or_create(name=cls._DEFAULT_NAME)
+        return obj.pk
+
     class Meta:
         constraints = [
             models.UniqueConstraint(models.functions.Lower("name"), name="unique_name"),
@@ -87,6 +80,19 @@ class MuscleGroup(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name}"
+
+
+class MuscleGroupOfExercise(models.Model):
+    exercise = models.ForeignKey("Exercise", on_delete=models.CASCADE)
+    muscle_group = models.ForeignKey(MuscleGroup, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["exercise", "muscle_group"],
+                name="unique_exercise_muscle_group",
+            )
+        ]
 
 
 class Exercise(models.Model):
@@ -97,10 +103,16 @@ class Exercise(models.Model):
         max_length=25, unique=True, validators=[validator_latin_words_single_spaces]
     )
     description = models.TextField(max_length=1000, null=True, blank=True)
-    movement_patterns = models.ManyToManyField(
+    movement_pattern = models.ForeignKey(
         MovementPattern,
-        through=MovementPatternOfExercise,
-        default=_get_default_movement_pattern_pk,
+        on_delete=models.SET_DEFAULT,
+        default=MovementPattern.get_default_pk,
+    )
+    muscle_groups = models.ManyToManyField(
+        MuscleGroup,
+        through=MuscleGroupOfExercise,
+        on_delete=models.SET_DEFAULT,
+        default=MuscleGroup.get_default_pk,
     )
 
     class Meta:
