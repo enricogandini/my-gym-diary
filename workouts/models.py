@@ -40,6 +40,55 @@ def get_start_end_dates_from_period(
     return (start_date, end_date)
 
 
+class MovementPattern(models.Model):
+    name = models.CharField(
+        max_length=25, unique=True, validators=[validator_latin_words_single_spaces]
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(models.functions.Lower("name"), name="unique_name"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+
+class MovementPatternOfExercise(models.Model):
+    exercise = models.ForeignKey("Exercise", on_delete=models.CASCADE)
+    movement_pattern = models.ForeignKey(MovementPattern, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["exercise", "movement_pattern"],
+                name="unique_exercise_movement_pattern",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.exercise.code}: {self.movement_pattern.name}"
+
+
+def _get_default_movement_pattern_pk() -> int:
+    result = MovementPattern.objects.get_or_create(name="Unknown")
+    return result[0].pk
+
+
+class MuscleGroup(models.Model):
+    name = models.CharField(
+        max_length=25, unique=True, validators=[validator_latin_words_single_spaces]
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(models.functions.Lower("name"), name="unique_name"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+
 class Exercise(models.Model):
     code = models.CharField(
         max_length=5, unique=True, validators=[validator_only_latin_letters]
@@ -48,6 +97,11 @@ class Exercise(models.Model):
         max_length=25, unique=True, validators=[validator_latin_words_single_spaces]
     )
     description = models.TextField(max_length=1000, null=True, blank=True)
+    movement_patterns = models.ManyToManyField(
+        MovementPattern,
+        through=MovementPatternOfExercise,
+        default=_get_default_movement_pattern_pk,
+    )
 
     class Meta:
         constraints = [
