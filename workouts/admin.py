@@ -3,7 +3,22 @@ from typing import Any
 from django.contrib import admin
 from django.db.models.query import QuerySet
 
-from .models import Exercise, SetOfExercise, Workout
+from .models import Exercise, MovementPattern, MuscleGroup, SetOfExercise, Workout
+
+
+@admin.register(MuscleGroup)
+class MuscleGroupAdmin(admin.ModelAdmin):
+    ordering = ("name",)
+
+
+@admin.register(MovementPattern)
+class MovementPatternAdmin(admin.ModelAdmin):
+    ordering = ("name",)
+
+
+class MuscleGroupInline(admin.TabularInline):
+    model = Exercise.muscle_groups.through
+    extra = 1
 
 
 @admin.register(Exercise)
@@ -11,6 +26,7 @@ class ExerciseAdmin(admin.ModelAdmin):
     list_display = ("code", "name", "description")
     search_fields = ("code", "name", "description")
     ordering = ("code",)
+    inlines = (MuscleGroupInline,)
 
 
 class RepetitionsRangesFilter(admin.SimpleListFilter):
