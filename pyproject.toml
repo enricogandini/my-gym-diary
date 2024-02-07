@@ -35,9 +35,10 @@ exclude = [
     "alembic",
     "migrations",
 ]
+[tool.ruff.lint]
 select = ["F", "I"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-local-folder = ["my_gym_diary"]
 
 [tool.pytest.ini_options]
