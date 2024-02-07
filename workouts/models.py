@@ -9,7 +9,7 @@ from typing import Self
 import pandas as pd
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 
 from accounts.models import CustomUser
@@ -139,10 +139,53 @@ class Exercise(models.Model):
 @receiver(post_save, sender=Exercise)
 def set_default_muscle_group(sender, instance, *args, **kwargs):
     default_muscle_group = MuscleGroup.get_default_instance()
-    if not instance.muscle_groups.exists():
-        instance.muscle_groups.add(default_muscle_group)
-    else:
-        instance.muscle_groups.remove(default_muscle_group)
+    # if not instance.muscle_groups.exists():
+    #     instance.muscle_groups.add(default_muscle_group)
+    # elif instance.muscle_groups.count() > 1:
+    #     instance.muscle_groups.remove(default_muscle_group)
+    instance.muscle_groups.add(default_muscle_group)
+
+
+# @receiver(post_save, sender=MuscleGroupOfExercise)
+# def manage_default_muscle_group_of_exercise(sender, instance, *args, **kwargs):
+#     # If an exercise has no muscle groups, add the default one
+#     # If an exercise has other muscle groups, remove the default one
+#     # If an exercise has other muscle groups, the default one cannot be added
+#     # If all muscle groups are removed, add the default one
+#     # Don't raise errors, instead set or delete the correct muscle group
+#     exercise = instance.exercise
+#     muscle_group = instance.muscle_group
+#     default_muscle_group = MuscleGroup.get_default_instance()
+#     if exercise.muscle_groups.count() > 1 and default_muscle_group in exercise.muscle_groups.all():
+#         instance.delete()
+#     # if muscle_group == default_muscle_group:
+#     #     if exercise.muscle_groups.count() > 1:
+#     #         instance.delete()
+#     # else:
+#     #     if exercise.muscle_groups.count() == 0:
+#     #         sender.objects.create(exercise=exercise, muscle_group=default_muscle_group)
+
+
+def update_muscle_groups(sender, instance, action, **kwargs):
+    # default_muscle_group = MuscleGroup.get_default_instance()
+    # if instance.muscle_groups.count() > 1:
+    #     instance.muscle_groups.remove(default_muscle_group)
+    if action == "post_add":
+        # If new muscle groups are added
+        if instance.muscle_groups.count() > 1:
+            # Remove the default "Unknown" muscle group if other groups are added
+            unknown_muscle_group = MuscleGroup.objects.filter(name="Unknown").first()
+            if unknown_muscle_group in instance.muscle_groups.all():
+                instance.muscle_groups.remove(unknown_muscle_group)
+    elif action == "post_remove":
+        # If muscle groups are removed
+        if instance.muscle_groups.count() == 0:
+            # Add back the default "Unknown" muscle group if no other groups are present
+            unknown_muscle_group = MuscleGroup.objects.get_or_create(name="Unknown")[0]
+            instance.muscle_groups.add(unknown_muscle_group)
+
+
+m2m_changed.connect(update_muscle_groups, sender=Exercise.muscle_groups.through)
 
 
 class Workout(models.Model):
