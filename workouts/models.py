@@ -9,7 +9,7 @@ from typing import Self
 import pandas as pd
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models.signals import pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from accounts.models import CustomUser
@@ -136,13 +136,13 @@ class Exercise(models.Model):
         return f"{self.code}: {self.name}"
 
 
-@receiver(pre_save, sender=Exercise)
+@receiver(post_save, sender=Exercise)
 def set_default_muscle_group(sender, instance, *args, **kwargs):
     default_muscle_group = MuscleGroup.get_default_instance()
     if not instance.muscle_groups.exists():
-        instance.muscle_groups.add(MuscleGroup.get_default_instance())
-    elif instance.muscle_groups.count() > 1:
-        instance.muscle_groups.remove(default_muscle_group.pk)
+        instance.muscle_groups.add(default_muscle_group)
+    else:
+        instance.muscle_groups.remove(default_muscle_group)
 
 
 class Workout(models.Model):
