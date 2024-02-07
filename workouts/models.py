@@ -4,10 +4,13 @@ import re
 from collections import defaultdict
 from enum import StrEnum
 from pathlib import Path
+from typing import Self
 
 import pandas as pd
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 from accounts.models import CustomUser
 
@@ -71,9 +74,9 @@ class MuscleGroup(models.Model):
     _DEFAULT_NAME = "Unknown"
 
     @classmethod
-    def get_default_pk(cls) -> int:
+    def get_default_instance(cls) -> Self:
         obj, _ = cls.objects.get_or_create(name=cls._DEFAULT_NAME)
-        return obj.pk
+        return obj
 
     class Meta:
         constraints = [
@@ -119,7 +122,6 @@ class Exercise(models.Model):
     muscle_groups = models.ManyToManyField(
         MuscleGroup,
         through=MuscleGroupOfExercise,
-        default=MuscleGroup.get_default_pk,
         help_text="What muscle groups does this exercise work?",
     )
 
@@ -132,6 +134,15 @@ class Exercise(models.Model):
 
     def __str__(self) -> str:
         return f"{self.code}: {self.name}"
+
+
+@receiver(pre_save, sender=Exercise)
+def set_default_muscle_group(sender, instance, *args, **kwargs):
+    default_muscle_group = MuscleGroup.get_default_instance()
+    if not instance.muscle_groups.exists():
+        instance.muscle_groups.add(MuscleGroup.get_default_instance())
+    elif instance.muscle_groups.count() > 1:
+        instance.muscle_groups.remove(default_muscle_group.pk)
 
 
 class Workout(models.Model):
