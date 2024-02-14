@@ -28,6 +28,10 @@ class ExerciseAdmin(admin.ModelAdmin):
     ordering = ("code",)
     inlines = (MuscleGroupInline,)
 
+    # a custom save_model that adds the muscle groups to the exercise
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
 
 class RepetitionsRangesFilter(admin.SimpleListFilter):
     title = "repetitions range"
