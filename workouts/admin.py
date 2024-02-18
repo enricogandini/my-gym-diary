@@ -28,9 +28,23 @@ class ExerciseAdmin(admin.ModelAdmin):
     ordering = ("code",)
     inlines = (MuscleGroupInline,)
 
-    # a custom save_model that adds the muscle groups to the exercise
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
+    def save_related(self, request, form, formsets, change):
+        """
+        Ensure that an exercise has at least one muscle group.
+        If it has more than one, remove the default one.
+
+        NOTE: the Admin interface must be used to create exercises!
+        This logic would not be applied if the exercise is created via the Model API.
+        See this issue for more details:
+        https://forum.djangoproject.com/t/how-to-set-default-value-to-manytomanyfield/27971
+        """
+        super().save_related(request, form, formsets, change)
+        default_muscle_group = MuscleGroup.get_default_instance()
+        exercise = form.instance
+        if exercise.muscle_groups.count() > 1:
+            exercise.muscle_groups.remove(default_muscle_group)
+        else:
+            exercise.muscle_groups.add(default_muscle_group)
 
 
 class RepetitionsRangesFilter(admin.SimpleListFilter):

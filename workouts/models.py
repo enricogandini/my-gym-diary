@@ -133,14 +133,6 @@ class Exercise(models.Model):
     def __str__(self) -> str:
         return f"{self.code}: {self.name}"
 
-    # def save(self, *args, **kwargs):
-    #     super().save(*args, **kwargs)
-    #     default_muscle_group = MuscleGroup.get_default_instance()
-    #     if not self.muscle_groups.exists():
-    #         self.muscle_groups.add(default_muscle_group)
-    #     elif self.muscle_groups.count() > 1:
-    #         self.muscle_groups.remove(default_muscle_group)
-
 
 class Workout(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
